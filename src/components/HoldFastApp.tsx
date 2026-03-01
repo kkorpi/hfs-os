@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, ArrowRight, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun, Menu } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, ArrowRight, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun, Menu, Download } from "lucide-react";
 import {
   getAllData,
   createClient as dbCreateClient,
@@ -392,6 +392,20 @@ const btnDanger = {
   color: "#F87171",
   border: "1px solid rgba(239,68,68,0.20)",
 };
+const btnGhost = {
+  padding: "6px 14px",
+  background: "transparent",
+  color: "#5E5E6E",
+  border: "1px solid #1C1C20",
+  borderRadius: "6px",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "5px",
+};
 
 // Time period filter
 function getTimePeriodRange(period: string): { start: string; end: string } | null {
@@ -504,10 +518,10 @@ function Field({ label, children }) {
   );
 }
 
-function PageHeader({ title, backLabel, onBack, actions, isMobile }: any) {
+function PageHeader({ title, backLabel, onBack, actions, titleAction, isMobile }: any) {
   return (
-    <div style={{ marginBottom: isMobile ? 20 : 32 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+    <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: isMobile ? "wrap" : "nowrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 0, minWidth: 0 }}>
           {onBack && (
             <button onClick={onBack} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6, marginRight: 8, fontSize: isMobile ? 13 : 15, flexShrink: 0 }}>
@@ -517,8 +531,9 @@ function PageHeader({ title, backLabel, onBack, actions, isMobile }: any) {
             </button>
           )}
           <h1 style={{ fontSize: isMobile ? 18 : (onBack ? 15 : 22), fontWeight: 600, margin: 0, color: "#EDEDF0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</h1>
+          {titleAction && <div style={{ marginLeft: 32 }}>{titleAction}</div>}
         </div>
-        {actions && <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</div>}
+        {actions && <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>{actions}</div>}
       </div>
     </div>
   );
@@ -990,7 +1005,7 @@ function DueDatePicker({ issueDate, value, onChange, onBlur, style: overrideStyl
 // ============================================================
 // PAGE: DASHBOARD
 // ============================================================
-function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTimePeriodChange, isMobile }) {
+function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTimePeriodChange, isMobile, settings }) {
   const today = todayStr();
   const thisMonth = new Date().getMonth();
   const thisYear = new Date().getFullYear();
@@ -1004,16 +1019,70 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
   const overdueInvoices = invoices.filter((i) => i.status === "overdue");
   const periodExpenses = filterByTimePeriod(expenses, "date", timePeriod).reduce((s, e) => s + e.amount, 0);
 
+  // Revenue goal — adapts to time period filter
+  const annualGoal = settings?.revenueGoal || 0;
+  const currentQuarter = Math.floor(thisMonth / 3);
+  const isQuarterView = timePeriod === "quarter";
+  const isYearView = timePeriod === "year";
+  const showGoal = annualGoal > 0 && (isQuarterView || isYearView);
+
+  // Goal amounts based on view
+  const goalAmount = isQuarterView ? annualGoal / 4 : annualGoal;
+  const goalRevenue = isQuarterView
+    ? paidInvoices.filter((i) => { const d = new Date(i.paidDate + "T00:00:00"); return d.getFullYear() === thisYear && Math.floor(d.getMonth() / 3) === currentQuarter; }).reduce((s, i) => s + i.total, 0)
+    : paidInvoices.filter((i) => { const d = new Date(i.paidDate + "T00:00:00"); return d.getFullYear() === thisYear; }).reduce((s, i) => s + i.total, 0);
+  // Expected revenue from outstanding/overdue invoices due within the period
+  const goalQStart = `${thisYear}-${String(currentQuarter * 3 + 1).padStart(2, "0")}-01`;
+  const goalQEndMonth = currentQuarter * 3 + 3;
+  const goalQEnd = `${thisYear}-${String(goalQEndMonth).padStart(2, "0")}-${new Date(thisYear, goalQEndMonth, 0).getDate()}`;
+  const goalYStart = `${thisYear}-01-01`;
+  const goalYEnd = `${thisYear}-12-31`;
+  const goalRangeStart = isQuarterView ? goalQStart : goalYStart;
+  const goalRangeEnd = isQuarterView ? goalQEnd : goalYEnd;
+  const goalPending = outstandingInvoices.filter((i) => i.dueDate && i.dueDate >= goalRangeStart && i.dueDate <= goalRangeEnd);
+  const goalExpected = goalPending.reduce((s, i) => s + i.total, 0);
+  const goalPercent = goalAmount > 0 ? Math.min((goalRevenue / goalAmount) * 100, 100) : 0;
+  const goalExpectedPercent = goalAmount > 0 ? Math.min(((goalRevenue + goalExpected) / goalAmount) * 100, 100) : 0;
+
+  // Pace calculation
+  const goalMonthsTotal = isQuarterView ? 3 : 12;
+  const goalDayFraction = new Date().getDate() / new Date(thisYear, thisMonth + 1, 0).getDate();
+  const goalMonthsElapsed = isQuarterView ? (thisMonth % 3) + goalDayFraction : thisMonth + goalDayFraction;
+  const goalProjected = goalMonthsElapsed > 0 ? (goalRevenue / goalMonthsElapsed) * goalMonthsTotal : 0;
+  const goalOnTrack = goalAmount > 0 && (goalProjected >= goalAmount || (goalRevenue + goalExpected) >= goalAmount);
+  const goalMonthsLeft = Math.ceil(goalMonthsTotal - goalMonthsElapsed);
+  const goalLabel = isQuarterView ? `Q${currentQuarter + 1} ${thisYear}` : `${thisYear}`;
+
   const getClientName = (id) => clients.find((c) => c.id === id)?.name || "—";
 
   return (
     <div>
-      <PageHeader title="Dashboard" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />{isMobile ? "Invoice" : "New Invoice"}</button>} isMobile={isMobile} />
+      <PageHeader title="Dashboard" actions={<TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />} isMobile={isMobile} />
+      {/* Revenue Goal */}
+      {showGoal && (
+        <div style={{ marginBottom: isMobile ? 12 : 16, padding: isMobile ? "14px 16px" : "16px 24px", background: "#141416", borderRadius: 10, border: "1px solid #1C1C20" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: "#5E5E6E", letterSpacing: "0.5px", fontWeight: 500 }}>{goalLabel} Revenue Goal</div>
+            <div style={{ fontSize: 11, color: goalOnTrack ? "#4ADE80" : "#FBBF24", fontWeight: 500 }}>
+              {goalOnTrack ? "On track" : "Behind pace"} · {formatCurrency(goalProjected)} projected
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: "#EDEDF0", fontFamily: mono }}>{formatCurrency(goalRevenue)}</span>
+            <span style={{ fontSize: 13, color: "#3E3E4A" }}>of {formatCurrency(goalAmount)}</span>
+            <span style={{ fontSize: 12, color: "#5E5E6E", marginLeft: "auto", fontFamily: mono }}>{goalPercent.toFixed(0)}%</span>
+          </div>
+          <div style={{ position: "relative", height: 5, background: "#1C1C20", borderRadius: 3, overflow: "hidden" }}>
+            {goalExpected > 0 && <div style={{ position: "absolute", height: "100%", width: `${goalExpectedPercent}%`, background: goalPercent >= 100 ? "#4ADE80" : goalOnTrack ? "#EDEDF0" : "#FBBF24", opacity: 0.25, borderRadius: 3, transition: "width 0.6s ease" }} />}
+            <div style={{ position: "relative", height: "100%", width: `${goalPercent}%`, background: goalPercent >= 100 ? "#4ADE80" : goalOnTrack ? "#EDEDF0" : "#FBBF24", borderRadius: 3, transition: "width 0.6s ease" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: "#3E3E4A" }}>{goalExpected > 0 ? `${formatCurrency(goalExpected)} outstanding` : `${formatCurrency(Math.max(goalAmount - goalRevenue, 0))} remaining`}</span>
+            <span style={{ fontSize: 11, color: "#3E3E4A" }}>{goalMonthsLeft} month{goalMonthsLeft !== 1 ? "s" : ""} left</span>
+          </div>
+        </div>
+      )}
 
-      {/* Time Period + Stat Cards */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
-      </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 16, marginBottom: isMobile ? 20 : 32 }}>
         <StatCard label="This Month" value={formatCurrency(thisMonthRevenue)} sub={new Date().toLocaleString("en", { month: "long", year: "numeric" })} isMobile={isMobile} />
         <StatCard label="Revenue" value={formatCurrency(periodRevenue)} sub={periodLabel} isMobile={isMobile} />
@@ -1117,7 +1186,7 @@ function ClientsListPage({ clients, projects, invoices, navigate, onSave, onDele
 
   return (
     <div>
-      <PageHeader title="Clients" actions={<button style={btnPrimary} onClick={() => navigate({ page: "clients", sub: "new" })}><Plus size={14} />{isMobile ? "Client" : "New Client"}</button>} isMobile={isMobile} />
+      <PageHeader title="Clients" titleAction={<button style={btnGhost} onClick={() => navigate({ page: "clients", sub: "new" })}><Plus size={13} />New</button>} isMobile={isMobile} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, ...ALL_CLIENT_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={Object.fromEntries([["all", clients.length], ...ALL_CLIENT_STATUSES.map((s) => [s, clients.filter((c) => c.status === s).length])])} />
       </div>
@@ -1360,7 +1429,7 @@ function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate, i
 
   return (
     <div>
-      <PageHeader title="Prospects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "prospects", sub: "new" })}>+ New Prospect</button>} isMobile={isMobile} />
+      <PageHeader title="Prospects" titleAction={<button style={btnGhost} onClick={() => navigate({ page: "prospects", sub: "new" })}><Plus size={13} />New</button>} isMobile={isMobile} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={statusOptions} counts={statusCounts} />
       </div>
@@ -1485,10 +1554,9 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
 
   return (
     <div>
-      <PageHeader title="Projects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "projects", sub: "new" })}><Plus size={14} />{isMobile ? "Project" : "New Project"}</button>} isMobile={isMobile} />
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
+      <PageHeader title="Projects" titleAction={<button style={btnGhost} onClick={() => navigate({ page: "projects", sub: "new" })}><Plus size={13} />New</button>} actions={<TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />} isMobile={isMobile} />
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, ...ALL_PROJECT_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={Object.fromEntries([["all", timeFiltered.length], ...ALL_PROJECT_STATUSES.map((s) => [s, timeFiltered.filter((p) => p.status === s).length])])} />
-        <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
       <div style={{ display: "grid", gap: 12 }}>
         {filteredProjects.map((proj) => {
@@ -1523,14 +1591,14 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
                 <div style={{ fontSize: 12, color: "#5E5E6E" }}>{proj.description?.substring(0, 40)}</div>
                 <div style={{ fontSize: 13, color: "#7B7B88", fontFamily: mono }}>{proj.rate ? `${formatCurrency(proj.rate)}/${proj.rateType === "monthly" ? "mo" : proj.rateType === "hourly" ? "hr" : "fixed"}` : "—"}</div>
                 <div><div style={{ fontSize: 13, color: "#4ADE80", fontFamily: mono }}>{formatCurrency(projRevenue)}</div>{projInvoices.length > 0 && <div style={{ fontSize: 11, color: "#3E3E4A" }}>{projInvoices.length} invoice{projInvoices.length !== 1 ? "s" : ""}</div>}</div>
-                <StatusChip status={proj.status} />
-                <ActionMenu items={[
+                <div style={{ display: "flex", alignItems: "center" }}><StatusChip status={proj.status} /></div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}><ActionMenu items={[
                   { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "projects", sub: "edit", id: proj.id }) },
                   ...(proj.clientId ? [{ icon: <Users size={13} />, label: "View Client", onClick: () => navigate({ page: "clients", sub: "detail", id: proj.clientId }) }] : []),
                   ...statusActions,
                   { divider: true, icon: null, label: "", onClick: () => {} },
                   { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: `Delete "${proj.name}"?`, confirmLabel: "Delete", danger: true })) onDelete(proj.id); }, danger: true },
-                ]} />
+                ]} /></div>
               </>)}
             </div>
           );
@@ -1638,12 +1706,11 @@ function InvoicesListPage({ invoices, clients, projects, lineItems, onDelete, on
 
   return (
     <div>
-      <PageHeader title="Invoices" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />{isMobile ? "Invoice" : "New Invoice"}</button>} isMobile={isMobile} />
+      <PageHeader title="Invoices" titleAction={<button style={btnGhost} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={13} />New</button>} actions={<TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />} isMobile={isMobile} />
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         <StatusDropdown value={filter} onChange={setFilter} options={[{ value: "all", label: "All" }, ...ALL_INVOICE_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={filterCounts} />
-        <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
 
       {/* Table / Cards */}
@@ -2403,7 +2470,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
   );
 }
 
-function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: existingItems, onSave, onCancel, settings }: { invoice: any; invoices: any[]; clients: any[]; projects: any[]; lineItems: any; onSave: any; onCancel: any; settings: Settings }) {
+function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: existingItems, onSave, onCancel, settings, isMobile }: { invoice: any; invoices: any[]; clients: any[]; projects: any[]; lineItems: any; onSave: any; onCancel: any; settings: Settings; isMobile?: boolean }) {
   const [form, setForm] = useState(invoice ? { ...invoice } : { clientId: clients[0]?.id || "", projectId: "", status: "draft", issueDate: todayStr(), dueDate: addDays(todayStr(), settings.paymentTermsDays), notes: "", clientNotes: "", number: nextInvoiceNumber(invoices, settings.invoicePrefix), recipients: getClientEmails(clients[0]) });
   const [items, setItems] = useState(existingItems.length > 0 ? existingItems : [{ id: generateId(), description: "", quantity: 1, rate: 0, amount: 0 }]);
   const upd = (k, v) => setForm({ ...form, [k]: v });
@@ -2475,7 +2542,7 @@ function InvoiceNewPage({ invoices, clients, projects, onSave, navigate, setting
   return (
     <div>
       <PageHeader title="New Invoice" backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} isMobile={isMobile} />
-      <InvoiceEditView invoice={null} invoices={invoices} clients={clients} projects={projects} lineItems={[]} onSave={async (inv, items) => { const newId = await onSave(inv, items); navigate({ page: "invoices", sub: "detail", id: newId }); }} onCancel={() => navigate({ page: "invoices" })} settings={settings} />
+      <InvoiceEditView invoice={null} invoices={invoices} clients={clients} projects={projects} lineItems={[]} onSave={async (inv, items) => { const newId = await onSave(inv, items); navigate({ page: "invoices", sub: "detail", id: newId }); }} onCancel={() => navigate({ page: "invoices" })} settings={settings} isMobile={isMobile} />
     </div>
   );
 }
@@ -2518,7 +2585,7 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
 
   return (
     <div>
-      <PageHeader title="Expenses" actions={<button style={btnPrimary} onClick={() => navigate({ page: "expenses", sub: "new" })}><Plus size={14} />{isMobile ? "Expense" : "New Expense"}</button>} isMobile={isMobile} />
+      <PageHeader title="Expenses" titleAction={<button style={btnGhost} onClick={() => navigate({ page: "expenses", sub: "new" })}><Plus size={13} />New</button>} actions={<TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />} isMobile={isMobile} />
 
       {/* Summary */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: isMobile ? 12 : 16, marginBottom: 24, padding: isMobile ? "12px 16px" : "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20" }}>
@@ -2532,8 +2599,8 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
         </div>
       </div>
 
-      {/* Category Dropdown + Time Period */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: isMobile ? 8 : 16, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+      {/* Category Filter */}
+      <div style={{ display: "flex", marginBottom: 20, gap: isMobile ? 8 : 16 }}>
         <div ref={catDropdownRef} style={{ position: "relative" }}>
           <button onClick={() => setCatDropdownOpen(!catDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 6, border: "1px solid #1C1C20", background: catFilter.length > 0 ? "#1A1A1E" : "transparent", color: catFilter.length > 0 ? "#EDEDF0" : "#5E5E6E", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
             {catLabel} <ChevronDown size={12} />
@@ -2562,7 +2629,6 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
             </div>
           )}
         </div>
-        <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
 
       {/* Table */}
@@ -2678,78 +2744,293 @@ function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDel
 // ============================================================
 // PAGE: REVENUE
 // ============================================================
-function RevenuePage({ invoices, expenses, clients, isMobile }) {
+function RevenuePage({ invoices, expenses, clients, isMobile, settings, timePeriod, onTimePeriodChange }) {
+  const [taxExpanded, setTaxExpanded] = useState(false);
   const thisYear = new Date().getFullYear();
+  const thisMonth = new Date().getMonth();
+  const currentQuarter = Math.floor(thisMonth / 3);
   const paidInvoices = invoices.filter((i) => i.status === "paid");
-  const totalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0);
-  const ytdRevenue = paidInvoices.filter((i) => i.paidDate?.startsWith(String(thisYear))).reduce((s, i) => s + i.total, 0);
-  const ytdExpenses = expenses.filter((e) => e.date?.startsWith(String(thisYear))).reduce((s, e) => s + e.amount, 0);
 
+  // Time-filtered data
+  const timeRange = getTimePeriodRange(timePeriod);
+  const filteredPaid = timeRange ? paidInvoices.filter((i) => i.paidDate && i.paidDate >= timeRange.start && i.paidDate <= timeRange.end) : paidInvoices;
+  const filteredExpenses = timeRange ? expenses.filter((e) => e.date && e.date >= timeRange.start && e.date <= timeRange.end) : expenses;
+  const periodRevenue = filteredPaid.reduce((s, i) => s + i.total, 0);
+  const periodExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0);
+  const periodProfit = periodRevenue - periodExpenses;
+
+  // Monthly breakdown (filtered)
   const monthlyRevenue = {};
   const monthlyExpenses = {};
-  paidInvoices.forEach((inv) => { if (inv.paidDate) { const key = inv.paidDate.substring(0, 7); monthlyRevenue[key] = (monthlyRevenue[key] || 0) + inv.total; } });
-  expenses.forEach((exp) => { if (exp.date) { const key = exp.date.substring(0, 7); monthlyExpenses[key] = (monthlyExpenses[key] || 0) + exp.amount; } });
+  filteredPaid.forEach((inv) => { if (inv.paidDate) { const key = inv.paidDate.substring(0, 7); monthlyRevenue[key] = (monthlyRevenue[key] || 0) + inv.total; } });
+  filteredExpenses.forEach((exp) => { if (exp.date) { const key = exp.date.substring(0, 7); monthlyExpenses[key] = (monthlyExpenses[key] || 0) + exp.amount; } });
   const allMonths = [...new Set([...Object.keys(monthlyRevenue), ...Object.keys(monthlyExpenses)])].sort().reverse();
-  const maxRevenue = Math.max(...Object.values(monthlyRevenue), 1);
+  const maxRevenue = Math.max(...Object.values(monthlyRevenue) as number[], 1);
+  const monthCount = Object.keys(monthlyRevenue).length || 1;
+  const avgRevenue = periodRevenue / monthCount;
 
-  const ytdMonths = Object.keys(monthlyRevenue).filter((k) => k.startsWith(String(thisYear))).length || 1;
+  // Period label
+  const periodLabel = timePeriod === "quarter" ? `Q${currentQuarter + 1} ${thisYear}` : timePeriod === "year" ? String(thisYear) : "All Time";
+
+  // Revenue goal
+  const annualGoal = settings?.revenueGoal || 0;
+  const isQuarterView = timePeriod === "quarter";
+  const isYearView = timePeriod === "year";
+  const showGoal = annualGoal > 0 && (isQuarterView || isYearView);
 
   return (
     <div>
-      <PageHeader title="Revenue" isMobile={isMobile} />
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(5, 1fr)", gap: isMobile ? 8 : 16, marginBottom: 32 }}>
-        <StatCard label="Total Revenue" value={formatCurrency(totalRevenue)} sub="All time" isMobile={isMobile} />
-        <StatCard label={`${thisYear} Revenue`} value={formatCurrency(ytdRevenue)} sub="Year to date" isMobile={isMobile} />
-        <StatCard label="Monthly Average" value={formatCurrency(ytdRevenue / ytdMonths)} sub={String(thisYear)} isMobile={isMobile} />
-        <StatCard label="YTD Expenses" value={formatCurrency(ytdExpenses)} sub={String(thisYear)} isMobile={isMobile} />
-        <StatCard label="YTD Profit" value={formatCurrency(ytdRevenue - ytdExpenses)} sub={String(thisYear)} isMobile={isMobile} />
+      <PageHeader title="Revenue" actions={<TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />} isMobile={isMobile} />
+
+      {/* Revenue Goal */}
+      {showGoal && (() => {
+        const goalAmount = isQuarterView ? annualGoal / 4 : annualGoal;
+        const goalMonthsTotal = isQuarterView ? 3 : 12;
+        const dayOfMonth = new Date().getDate();
+        const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+        const monthFraction = dayOfMonth / daysInMonth;
+        const goalMonthsElapsed = isQuarterView ? (thisMonth % 3) + monthFraction : thisMonth + monthFraction;
+        // For goal, always use thisYear data regardless of filter
+        const ytdPaid = paidInvoices.filter((i) => i.paidDate?.startsWith(String(thisYear)));
+        const goalRevenue = isQuarterView
+          ? ytdPaid.filter((i) => { const d = new Date(i.paidDate + "T00:00:00"); return Math.floor(d.getMonth() / 3) === currentQuarter; }).reduce((s, i) => s + i.total, 0)
+          : ytdPaid.reduce((s, i) => s + i.total, 0);
+
+        // Expected revenue from outstanding/overdue invoices due within the period
+        const pendingInvoices = invoices.filter((i) => ["outstanding", "overdue"].includes(i.status) && i.dueDate);
+        const goalRange = isQuarterView
+          ? { start: `${thisYear}-${String(currentQuarter * 3 + 1).padStart(2, "0")}-01`, end: `${thisYear}-${String(currentQuarter * 3 + 3).padStart(2, "0")}-31` }
+          : { start: `${thisYear}-01-01`, end: `${thisYear}-12-31` };
+        const expectedRevenue = pendingInvoices.filter((i) => i.dueDate >= goalRange.start && i.dueDate <= goalRange.end).reduce((s, i) => s + i.total, 0);
+        const goalWithExpected = goalRevenue + expectedRevenue;
+
+        const goalPercent = goalAmount > 0 ? Math.min((goalRevenue / goalAmount) * 100, 100) : 0;
+        const expectedPercent = goalAmount > 0 ? Math.min(((goalRevenue + expectedRevenue) / goalAmount) * 100, 100) : 0;
+        const projected = goalMonthsElapsed > 0 ? (goalRevenue / goalMonthsElapsed) * goalMonthsTotal : 0;
+        const onTrack = goalAmount > 0 && (projected >= goalAmount || goalWithExpected >= goalAmount);
+        const goalLabel = isQuarterView ? `Q${currentQuarter + 1} ${thisYear}` : String(thisYear);
+
+        // Quarterly breakdown (only for year view)
+        const quarterGoal = annualGoal / 4;
+        const quarterLabels = ["Q1", "Q2", "Q3", "Q4"];
+        const quarterMonthNames = ["Jan\u2013Mar", "Apr\u2013Jun", "Jul\u2013Sep", "Oct\u2013Dec"];
+        const quarterRevenues = [0, 1, 2, 3].map((q) => {
+          const startMonth = q * 3;
+          return ytdPaid.filter((i) => { const d = new Date(i.paidDate + "T00:00:00"); return d.getMonth() >= startMonth && d.getMonth() < startMonth + 3; }).reduce((s, i) => s + i.total, 0);
+        });
+
+        return (
+          <div style={{ marginBottom: isMobile ? 12 : 16, padding: isMobile ? "14px 16px" : "16px 24px", background: "#141416", borderRadius: 10, border: "1px solid #1C1C20" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: "#5E5E6E", letterSpacing: "0.5px", fontWeight: 500 }}>{goalLabel} Revenue Goal</div>
+              <div style={{ fontSize: 11, color: onTrack ? "#4ADE80" : "#FBBF24", fontWeight: 500 }}>
+                {onTrack ? "On track" : "Behind pace"} · {formatCurrency(projected)} projected
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: isMobile ? 20 : 28, fontWeight: 600, color: "#EDEDF0", fontFamily: mono }}>{formatCurrency(goalRevenue)}</span>
+              <span style={{ fontSize: 13, color: "#3E3E4A" }}>of {formatCurrency(goalAmount)}</span>
+              <span style={{ fontSize: 12, color: "#5E5E6E", marginLeft: "auto", fontFamily: mono }}>{goalPercent.toFixed(0)}%</span>
+            </div>
+            <div style={{ position: "relative", height: 6, background: "#1C1C20", borderRadius: 3, overflow: "hidden" }}>
+              {expectedRevenue > 0 && <div style={{ position: "absolute", height: "100%", width: `${expectedPercent}%`, background: goalPercent >= 100 ? "#4ADE80" : onTrack ? "#EDEDF0" : "#FBBF24", opacity: 0.25, borderRadius: 3, transition: "width 0.6s ease" }} />}
+              <div style={{ position: "relative", height: "100%", width: `${goalPercent}%`, background: goalPercent >= 100 ? "#4ADE80" : onTrack ? "#EDEDF0" : "#FBBF24", borderRadius: 3, transition: "width 0.6s ease" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, marginBottom: isYearView ? 14 : 0 }}>
+              <span style={{ fontSize: 11, color: "#3E3E4A" }}>{expectedRevenue > 0 ? `${formatCurrency(expectedRevenue)} outstanding` : `${formatCurrency(Math.max(goalAmount - goalRevenue, 0))} remaining`}</span>
+              <span style={{ fontSize: 11, color: "#3E3E4A" }}>{Math.ceil(goalMonthsTotal - goalMonthsElapsed)} month{Math.ceil(goalMonthsTotal - goalMonthsElapsed) !== 1 ? "s" : ""} left</span>
+            </div>
+
+            {/* Quarterly breakdown — year view only */}
+            {isYearView && (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 10 }}>
+                {[0, 1, 2, 3].map((q) => {
+                  const isCurrent = q === currentQuarter;
+                  const isFuture = q > currentQuarter;
+                  const qRevenue = quarterRevenues[q];
+                  const qPercent = quarterGoal > 0 ? Math.min((qRevenue / quarterGoal) * 100, 100) : 0;
+                  const qMonthsInQ = isCurrent ? (thisMonth % 3) + 1 : (isFuture ? 0 : 3);
+                  const qProjected = isCurrent && qMonthsInQ > 0 ? (qRevenue / qMonthsInQ) * 3 : qRevenue;
+                  const qOnTrack = isFuture || (quarterGoal > 0 && qProjected >= quarterGoal);
+                  const barColor = isFuture ? "#1C1C20" : qPercent >= 100 ? "#4ADE80" : qOnTrack ? "#EDEDF0" : "#FBBF24";
+                  return (
+                    <div key={q} style={{ padding: isMobile ? "10px 12px" : "12px 14px", background: isCurrent ? "#1A1A1E" : "transparent", borderRadius: 8, border: isCurrent ? "1px solid #2A2A30" : "1px solid transparent", opacity: isFuture ? 0.4 : 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: isCurrent ? "#EDEDF0" : "#5E5E6E" }}>{quarterLabels[q]}</span>
+                        <span style={{ fontSize: 10, color: "#3E3E4A" }}>{quarterMonthNames[q]}</span>
+                      </div>
+                      <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, color: isFuture ? "#2A2A30" : "#EDEDF0", fontFamily: mono, marginBottom: 6 }}>{formatCurrency(qRevenue)}</div>
+                      <div style={{ height: 3, background: "#1C1C20", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
+                        <div style={{ height: "100%", width: `${isFuture ? 0 : qPercent}%`, background: barColor, borderRadius: 2, transition: "width 0.6s ease" }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#3E3E4A" }}>{isFuture ? formatCurrency(quarterGoal) + " target" : `${qPercent.toFixed(0)}% of ${formatCurrency(quarterGoal)}`}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Tax Estimates — collapsible */}
+      {(isQuarterView || isYearView) && (() => {
+        const seTaxRate = (settings?.selfEmploymentTaxRate ?? 15.3) / 100;
+        const incomeTaxRate = (settings?.estimatedIncomeTaxRate ?? 22) / 100;
+        const ytdPaid = paidInvoices.filter((i) => i.paidDate?.startsWith(String(thisYear)));
+        const periodDeductible = filteredExpenses.filter((e) => e.taxDeductible === 1).reduce((s, e) => s + e.amount, 0);
+        const periodNetIncome = periodRevenue - periodDeductible;
+        const periodSETax = Math.max(periodNetIncome * seTaxRate, 0);
+        const periodIncomeTax = Math.max(periodNetIncome * incomeTaxRate, 0);
+        const periodTotalTax = periodSETax + periodIncomeTax;
+        const effectiveRate = periodNetIncome > 0 ? (periodTotalTax / periodNetIncome) * 100 : 0;
+
+        // Per-quarter breakdown (year view)
+        const quarterTaxData = [0, 1, 2, 3].map((q) => {
+          const startMonth = q * 3;
+          const qRevenue = ytdPaid.filter((i) => { const d = new Date(i.paidDate + "T00:00:00"); return d.getMonth() >= startMonth && d.getMonth() < startMonth + 3; }).reduce((s, i) => s + i.total, 0);
+          const qDeductible = expenses.filter((e) => e.date?.startsWith(String(thisYear)) && e.taxDeductible === 1).filter((e) => { const d = new Date(e.date + "T00:00:00"); return d.getMonth() >= startMonth && d.getMonth() < startMonth + 3; }).reduce((s, e) => s + e.amount, 0);
+          const qNet = qRevenue - qDeductible;
+          const qTotal = Math.max(qNet * seTaxRate, 0) + Math.max(qNet * incomeTaxRate, 0);
+          return { netIncome: qNet, totalTax: qTotal };
+        });
+        const quarterLabels = ["Q1", "Q2", "Q3", "Q4"];
+
+        return (
+          <div style={{ marginBottom: isMobile ? 12 : 16, background: "#141416", borderRadius: 10, border: "1px solid #1C1C20" }}>
+            <button onClick={() => setTaxExpanded(!taxExpanded)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", padding: isMobile ? "14px 16px" : "16px 24px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 11, color: "#5E5E6E", letterSpacing: "0.5px", fontWeight: 500 }}>{periodLabel} Tax Estimate</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#FBBF24", fontFamily: mono }}>{formatCurrency(periodTotalTax)}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 11, color: "#3E3E4A" }}>{effectiveRate.toFixed(1)}% rate</span>
+                <ChevronDown size={14} color="#5E5E6E" style={{ transform: taxExpanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 150ms ease" }} />
+              </div>
+            </button>
+            {taxExpanded && (
+              <div style={{ padding: isMobile ? "0 16px 14px" : "0 24px 16px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, color: "#5E5E6E" }}>Set aside</span>
+                  <span style={{ fontSize: isMobile ? 20 : 28, fontWeight: 600, color: "#FBBF24", fontFamily: mono }}>{formatCurrency(periodTotalTax)}</span>
+                </div>
+                <div style={{ display: "flex", gap: isMobile ? 16 : 24, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: "#3E3E4A", marginBottom: 2 }}>Self-Employment ({(seTaxRate * 100).toFixed(1)}%)</div>
+                    <div style={{ fontSize: 13, fontFamily: mono, color: "#7B7B88" }}>{formatCurrency(periodSETax)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: "#3E3E4A", marginBottom: 2 }}>Income Tax ({(incomeTaxRate * 100).toFixed(0)}%)</div>
+                    <div style={{ fontSize: 13, fontFamily: mono, color: "#7B7B88" }}>{formatCurrency(periodIncomeTax)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: "#3E3E4A", marginBottom: 2 }}>Net Income</div>
+                    <div style={{ fontSize: 13, fontFamily: mono, color: "#7B7B88" }}>{formatCurrency(periodNetIncome)}</div>
+                  </div>
+                </div>
+                <div style={{ height: 6, background: "#1C1C20", borderRadius: 3, overflow: "hidden", marginBottom: 6 }}>
+                  <div style={{ height: "100%", width: `${periodRevenue > 0 ? Math.min((periodTotalTax / periodRevenue) * 100, 100) : 0}%`, background: "#FBBF24", borderRadius: 3, transition: "width 0.6s ease" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isYearView ? 14 : 8 }}>
+                  <span style={{ fontSize: 11, color: "#3E3E4A" }}>{formatCurrency(periodRevenue)} revenue − {formatCurrency(periodDeductible)} deductions</span>
+                  <span style={{ fontSize: 11, color: "#3E3E4A" }}>{formatCurrency(periodRevenue - periodTotalTax)} after tax</span>
+                </div>
+
+                {/* Quarterly breakdown — year view only */}
+                {isYearView && (
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 10, marginBottom: 8 }}>
+                    {[0, 1, 2, 3].map((q) => {
+                      const isCurrent = q === currentQuarter;
+                      const isFuture = q > currentQuarter;
+                      const qData = quarterTaxData[q];
+                      return (
+                        <div key={q} style={{ padding: isMobile ? "10px 12px" : "12px 14px", background: isCurrent ? "#1A1A1E" : "transparent", borderRadius: 8, border: isCurrent ? "1px solid #2A2A30" : "1px solid transparent", opacity: isFuture ? 0.4 : 1 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: isCurrent ? "#EDEDF0" : "#5E5E6E" }}>{quarterLabels[q]}</span>
+                            <span style={{ fontSize: 10, color: "#3E3E4A" }}>Set aside</span>
+                          </div>
+                          <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, color: isFuture ? "#2A2A30" : "#FBBF24", fontFamily: mono, marginBottom: 4 }}>{formatCurrency(qData.totalTax)}</div>
+                          <div style={{ fontSize: 10, color: "#3E3E4A" }}>{isFuture ? "—" : `on ${formatCurrency(qData.netIncome)} net`}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ fontSize: 10, color: "#3E3E4A", fontStyle: "italic", lineHeight: 1.4 }}>
+                  Estimate only — not tax advice. Adjust rates in Settings → Goals & Tax.
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Stat Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 16, marginBottom: 32 }}>
+        <StatCard label="Revenue" value={formatCurrency(periodRevenue)} sub={periodLabel} isMobile={isMobile} />
+        <StatCard label="Expenses" value={formatCurrency(periodExpenses)} sub={periodLabel} isMobile={isMobile} />
+        <StatCard label="Profit" value={formatCurrency(periodProfit)} sub={periodLabel} isMobile={isMobile} />
+        <StatCard label="Monthly Avg" value={formatCurrency(avgRevenue)} sub={`${monthCount} month${monthCount !== 1 ? "s" : ""}`} isMobile={isMobile} />
       </div>
 
       {/* Monthly Breakdown */}
-      <h2 style={{ fontSize: 15, fontWeight: 500, color: "#7B7B88", marginBottom: 16 }}>Monthly Breakdown</h2>
-      <div style={{ borderRadius: 8, border: "1px solid #1C1C20", overflow: "hidden", marginBottom: 32 }}>
-        {allMonths.map((month, idx) => {
-          const rev = monthlyRevenue[month] || 0;
-          const exp = monthlyExpenses[month] || 0;
-          const pct = (rev / maxRevenue) * 100;
-          const [y, m] = month.split("-");
-          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleString("en", { month: "long", year: "numeric" });
-          return (
-            <div key={month} style={isMobile ? { padding: "12px 16px", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "160px 1fr 120px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20" }}>
-              {isMobile ? (<>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
-                  <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(rev)}</span>
-                </div>
-                <div style={{ position: "relative", height: 16, background: "#0A0A0C", borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 4 }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontFamily: mono, fontSize: 11, color: "#F87171" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
-                  <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171" }}>{formatCurrency(rev - exp)}</span>
-                </div>
-              </>) : (<>
-                <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
-                <div style={{ position: "relative", height: 20, background: "#0A0A0C", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 4 }} />
-                </div>
-                <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500, textAlign: "right" }}>{formatCurrency(rev)}</span>
-                <span style={{ fontFamily: mono, fontSize: 12, color: "#F87171", textAlign: "right" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
-                <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171", textAlign: "right" }}>{formatCurrency(rev - exp)}</span>
-              </>)}
+      {allMonths.length > 0 && <>
+        <h2 style={{ fontSize: 15, fontWeight: 500, color: "#7B7B88", marginBottom: 16 }}>Monthly Breakdown</h2>
+        <div style={{ borderRadius: 8, border: "1px solid #1C1C20", overflow: "hidden", marginBottom: 32 }}>
+          {!isMobile && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 100px 100px", gap: 16, padding: "8px 20px", borderBottom: "1px solid #1C1C20" }}>
+              <span style={{ fontSize: 10, color: "#3E3E4A", letterSpacing: "0.5px" }}>MONTH</span>
+              <span style={{ fontSize: 10, color: "#3E3E4A", letterSpacing: "0.5px", textAlign: "right" }}>REVENUE</span>
+              <span style={{ fontSize: 10, color: "#3E3E4A", letterSpacing: "0.5px", textAlign: "right" }}>EXPENSES</span>
+              <span style={{ fontSize: 10, color: "#3E3E4A", letterSpacing: "0.5px", textAlign: "right" }}>PROFIT</span>
             </div>
-          );
-        })}
-      </div>
+          )}
+          {allMonths.map((month) => {
+            const rev = monthlyRevenue[month] || 0;
+            const exp = monthlyExpenses[month] || 0;
+            const pct = (rev / maxRevenue) * 100;
+            const [y, m] = month.split("-");
+            const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleString("en", { month: "long", year: "numeric" });
+            return (
+              <div key={month} style={isMobile ? { padding: "12px 16px", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "1fr 120px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20" }}>
+                {isMobile ? (<>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
+                    <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(rev)}</span>
+                  </div>
+                  <div style={{ height: 4, background: "#1C1C20", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 2 }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontFamily: mono, fontSize: 11, color: "#F87171" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
+                    <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171" }}>{formatCurrency(rev - exp)}</span>
+                  </div>
+                </>) : (<>
+                  <div>
+                    <span style={{ fontSize: 13, color: "#7B7B88", display: "block" }}>{label}</span>
+                    <div style={{ height: 4, background: "#1C1C20", borderRadius: 2, overflow: "hidden", marginTop: 6 }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 2 }} />
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500, textAlign: "right" }}>{formatCurrency(rev)}</span>
+                  <span style={{ fontFamily: mono, fontSize: 12, color: "#F87171", textAlign: "right" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
+                  <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171", textAlign: "right" }}>{formatCurrency(rev - exp)}</span>
+                </>)}
+              </div>
+            );
+          })}
+        </div>
+      </>}
 
       {/* Revenue by Client */}
       <h2 style={{ fontSize: 15, fontWeight: 500, color: "#7B7B88", marginBottom: 16 }}>Revenue by Client</h2>
       <div style={{ display: "grid", gap: 12 }}>
         {clients.map((client) => {
-          const rev = paidInvoices.filter((i) => i.clientId === client.id).reduce((s, i) => s + i.total, 0);
-          const paidCount = paidInvoices.filter((i) => i.clientId === client.id).length;
+          const rev = filteredPaid.filter((i) => i.clientId === client.id).reduce((s, i) => s + i.total, 0);
+          const paidCount = filteredPaid.filter((i) => i.clientId === client.id).length;
           if (rev === 0) return null;
-          const pct = totalRevenue > 0 ? Math.round((rev / totalRevenue) * 100) : 0;
+          const pct = periodRevenue > 0 ? Math.round((rev / periodRevenue) * 100) : 0;
           return (
             <div key={client.id} style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", padding: isMobile ? "12px 16px" : "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 0 }}>
               <div>
@@ -2775,9 +3056,11 @@ const settingsTabs = [
   { key: "payment", label: "Payment Details" },
   { key: "invoice", label: "Invoice Defaults" },
   { key: "expenses", label: "Expense Defaults" },
+  { key: "goals", label: "Goals & Tax" },
+  { key: "export", label: "Export" },
 ];
 
-function SettingsPage({ settings, onSave, session, isMobile }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void>; session?: any; isMobile?: boolean }) {
+function SettingsPage({ settings, onSave, session, isMobile, clients, projects, invoices, expenses, prospects, lineItems }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void>; session?: any; isMobile?: boolean; clients?: any[]; projects?: any[]; invoices?: any[]; expenses?: any[]; prospects?: any[]; lineItems?: any[] }) {
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
@@ -2800,6 +3083,8 @@ function SettingsPage({ settings, onSave, session, isMobile }: { settings: Setti
         {activeTab === "payment" && <SettingsPayment settings={settings} onSave={onSave} />}
         {activeTab === "invoice" && <SettingsInvoice settings={settings} onSave={onSave} />}
         {activeTab === "expenses" && <SettingsExpenses settings={settings} onSave={onSave} />}
+        {activeTab === "goals" && <SettingsGoals settings={settings} onSave={onSave} />}
+        {activeTab === "export" && <SettingsExport clients={clients || []} projects={projects || []} invoices={invoices || []} expenses={expenses || []} prospects={prospects || []} lineItems={lineItems || []} />}
       </div>
 
       {/* Sign out — only on Profile tab */}
@@ -2820,33 +3105,24 @@ function SettingsPage({ settings, onSave, session, isMobile }: { settings: Setti
   );
 }
 
-function SettingsSaveButton({ saving, saved }: { saving: boolean; saved: boolean }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
-      <button type="submit" disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>
-        {saving ? "Saving..." : "Save"}
-      </button>
-      {saved && <span style={{ fontSize: 12, color: "#4ADE80" }}>Saved</span>}
-    </div>
-  );
+function useAutoSave(onSave: (data: any) => Promise<void>) {
+  const [saved, setSaved] = useState(false);
+  const timer = useRef<any>(null);
+  const save = useCallback(async (data: any) => {
+    if (timer.current) clearTimeout(timer.current);
+    await onSave(data);
+    setSaved(true);
+    timer.current = setTimeout(() => setSaved(false), 2000);
+  }, [onSave]);
+  return { save, saved };
 }
 
 function SettingsProfile({ settings, onSave, session }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void>; session?: any }) {
   const [ownerName, setOwnerName] = useState(settings.ownerName);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    await onSave({ ownerName });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const { save, saved } = useAutoSave(onSave);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       {session?.user?.image && (
         <div style={{ marginBottom: 20 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2854,107 +3130,91 @@ function SettingsProfile({ settings, onSave, session }: { settings: Settings; on
         </div>
       )}
       <Field label="Name">
-        <input style={inputStyle} value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+        <input style={inputStyle} value={ownerName} onChange={(e) => setOwnerName(e.target.value)} onBlur={() => save({ ownerName })} />
       </Field>
       <Field label="Email">
         <input style={{ ...inputStyle, background: "#0A0A0C", color: "#5E5E6E" }} value={session?.user?.email || ""} readOnly />
       </Field>
-      <SettingsSaveButton saving={saving} saved={saved} />
-    </form>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", marginTop: 4, display: "block" }}>Saved</span>}
+    </div>
   );
 }
 
 function SettingsBusiness({ settings, onSave }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void> }) {
-  const [form, setForm] = useState({
+  const formRef = useRef({
     companyName: settings.companyName,
     location: settings.location,
     businessEmail: settings.businessEmail,
     logoUrl: settings.logoUrl,
     ein: settings.ein,
   });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const upd = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const [form, setForm] = useState(formRef.current);
+  const { save, saved } = useAutoSave(onSave);
+  const upd = (k: string, v: string) => { const next = { ...formRef.current, [k]: v }; formRef.current = next; setForm(next); };
+  const blur = () => save(formRef.current);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       <Field label="Company Name">
-        <input style={inputStyle} value={form.companyName} onChange={(e) => upd("companyName", e.target.value)} />
+        <input style={inputStyle} value={form.companyName} onChange={(e) => upd("companyName", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Location">
-        <input style={inputStyle} value={form.location} onChange={(e) => upd("location", e.target.value)} />
+        <input style={inputStyle} value={form.location} onChange={(e) => upd("location", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Business Email">
-        <input style={inputStyle} type="email" value={form.businessEmail} onChange={(e) => upd("businessEmail", e.target.value)} />
+        <input style={inputStyle} type="email" value={form.businessEmail} onChange={(e) => upd("businessEmail", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Logo URL">
-        <input style={inputStyle} value={form.logoUrl} onChange={(e) => upd("logoUrl", e.target.value)} placeholder="https://..." />
+        <input style={inputStyle} value={form.logoUrl} onChange={(e) => upd("logoUrl", e.target.value)} onBlur={blur} placeholder="https://..." />
       </Field>
       <Field label="EIN / Tax ID">
-        <input style={inputStyle} value={form.ein} onChange={(e) => upd("ein", e.target.value)} placeholder="XX-XXXXXXX" />
+        <input style={inputStyle} value={form.ein} onChange={(e) => upd("ein", e.target.value)} onBlur={blur} placeholder="XX-XXXXXXX" />
       </Field>
-      <SettingsSaveButton saving={saving} saved={saved} />
-    </form>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", marginTop: 4, display: "block" }}>Saved</span>}
+    </div>
   );
 }
 
 function SettingsPayment({ settings, onSave }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void> }) {
-  const [form, setForm] = useState({
+  const formRef = useRef({
     paymentMethodLabel: settings.paymentMethodLabel,
     bankName: settings.bankName,
     accountNumber: settings.accountNumber,
     routingNumber: settings.routingNumber,
     lateFeeRate: String(settings.lateFeeRate),
   });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const upd = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    await onSave({ ...form, lateFeeRate: parseFloat(form.lateFeeRate) || 0 });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const [form, setForm] = useState(formRef.current);
+  const { save, saved } = useAutoSave(onSave);
+  const upd = (k: string, v: string) => { const next = { ...formRef.current, [k]: v }; formRef.current = next; setForm(next); };
+  const blur = () => save({ ...formRef.current, lateFeeRate: parseFloat(formRef.current.lateFeeRate) || 0 });
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       <Field label="Payment Method">
-        <input style={inputStyle} value={form.paymentMethodLabel} onChange={(e) => upd("paymentMethodLabel", e.target.value)} />
+        <input style={inputStyle} value={form.paymentMethodLabel} onChange={(e) => upd("paymentMethodLabel", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Bank Name">
-        <input style={inputStyle} value={form.bankName} onChange={(e) => upd("bankName", e.target.value)} />
+        <input style={inputStyle} value={form.bankName} onChange={(e) => upd("bankName", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Account Number">
-        <input style={inputStyle} value={form.accountNumber} onChange={(e) => upd("accountNumber", e.target.value)} />
+        <input style={inputStyle} value={form.accountNumber} onChange={(e) => upd("accountNumber", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Routing Number">
-        <input style={inputStyle} value={form.routingNumber} onChange={(e) => upd("routingNumber", e.target.value)} />
+        <input style={inputStyle} value={form.routingNumber} onChange={(e) => upd("routingNumber", e.target.value)} onBlur={blur} />
       </Field>
       <Field label="Late Fee Rate">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input style={{ ...inputStyle, width: 100 }} type="number" step="0.1" min="0" value={form.lateFeeRate} onChange={(e) => upd("lateFeeRate", e.target.value)} />
+          <input style={{ ...inputStyle, width: 100 }} type="number" step="0.1" min="0" value={form.lateFeeRate} onChange={(e) => upd("lateFeeRate", e.target.value)} onBlur={blur} />
           <span style={{ fontSize: 13, color: "#5E5E6E" }}>% monthly</span>
         </div>
       </Field>
-      <SettingsSaveButton saving={saving} saved={saved} />
-    </form>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", marginTop: 4, display: "block" }}>Saved</span>}
+    </div>
   );
 }
 
 function SettingsInvoice({ settings, onSave }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void> }) {
-  const [form, setForm] = useState({
+  const formRef = useRef({
     paymentTermsDays: String(settings.paymentTermsDays),
     invoicePrefix: settings.invoicePrefix,
     defaultTaxRate: String(settings.defaultTaxRate),
@@ -2963,46 +3223,36 @@ function SettingsInvoice({ settings, onSave }: { settings: Settings; onSave: (da
     reminderEmailSubject: settings.reminderEmailSubject,
     emailSignature: settings.emailSignature,
   });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const upd = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
+  const [form, setForm] = useState(formRef.current);
+  const { save, saved } = useAutoSave(onSave);
+  const upd = (k: string, v: string) => { const next = { ...formRef.current, [k]: v }; formRef.current = next; setForm(next); };
+  const blur = () => save({ ...formRef.current, paymentTermsDays: parseInt(formRef.current.paymentTermsDays) || 15, defaultTaxRate: parseFloat(formRef.current.defaultTaxRate) || 0 });
 
   const year = new Date().getFullYear();
   const previewNumber = `${form.invoicePrefix}-${year}-001`;
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    await onSave({
-      ...form,
-      paymentTermsDays: parseInt(form.paymentTermsDays) || 15,
-      defaultTaxRate: parseFloat(form.defaultTaxRate) || 0,
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
   return (
-    <form onSubmit={handleSubmit}>
-      <Field label="Default Payment Terms">
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input style={{ ...inputStyle, width: 80 }} type="number" min="0" value={form.paymentTermsDays} onChange={(e) => upd("paymentTermsDays", e.target.value)} />
-          <span style={{ fontSize: 13, color: "#5E5E6E" }}>days</span>
-        </div>
-      </Field>
+    <div>
       <Field label="Invoice Number Prefix">
-        <input style={inputStyle} value={form.invoicePrefix} onChange={(e) => upd("invoicePrefix", e.target.value)} />
+        <input style={inputStyle} value={form.invoicePrefix} onChange={(e) => upd("invoicePrefix", e.target.value)} onBlur={blur} />
         <div style={{ fontSize: 11, color: "#3E3E4A", marginTop: 4 }}>Preview: {previewNumber}</div>
       </Field>
-      <Field label="Default Tax Rate">
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input style={{ ...inputStyle, width: 80 }} type="number" step="0.1" min="0" value={form.defaultTaxRate} onChange={(e) => upd("defaultTaxRate", e.target.value)} />
-          <span style={{ fontSize: 13, color: "#5E5E6E" }}>%</span>
-        </div>
-      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Payment Terms">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input style={{ ...inputStyle, width: 80 }} type="number" min="0" value={form.paymentTermsDays} onChange={(e) => upd("paymentTermsDays", e.target.value)} onBlur={blur} />
+            <span style={{ fontSize: 13, color: "#5E5E6E" }}>days</span>
+          </div>
+        </Field>
+        <Field label="Default Tax Rate">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input style={{ ...inputStyle, width: 80 }} type="number" step="0.1" min="0" value={form.defaultTaxRate} onChange={(e) => upd("defaultTaxRate", e.target.value)} onBlur={blur} />
+            <span style={{ fontSize: 13, color: "#5E5E6E" }}>%</span>
+          </div>
+        </Field>
+      </div>
       <Field label="Currency">
-        <Select value={form.currency} onChange={(v) => upd("currency", v)} options={[
+        <Select value={form.currency} onChange={(v) => { upd("currency", v); setTimeout(() => save({ ...formRef.current, currency: v, paymentTermsDays: parseInt(formRef.current.paymentTermsDays) || 15, defaultTaxRate: parseFloat(formRef.current.defaultTaxRate) || 0 }), 0); }} options={[
           { value: "USD", label: "USD — US Dollar" },
           { value: "EUR", label: "EUR — Euro" },
           { value: "GBP", label: "GBP — British Pound" },
@@ -3011,46 +3261,272 @@ function SettingsInvoice({ settings, onSave }: { settings: Settings; onSave: (da
         ]} />
       </Field>
       <Field label="Invoice Email Subject">
-        <input style={inputStyle} value={form.invoiceEmailSubject} onChange={(e) => upd("invoiceEmailSubject", e.target.value)} />
+        <input style={inputStyle} value={form.invoiceEmailSubject} onChange={(e) => upd("invoiceEmailSubject", e.target.value)} onBlur={blur} />
         <div style={{ fontSize: 11, color: "#3E3E4A", marginTop: 4 }}>Use {"{number}"} and {"{company}"} as placeholders</div>
       </Field>
       <Field label="Reminder Email Subject">
-        <input style={inputStyle} value={form.reminderEmailSubject} onChange={(e) => upd("reminderEmailSubject", e.target.value)} />
+        <input style={inputStyle} value={form.reminderEmailSubject} onChange={(e) => upd("reminderEmailSubject", e.target.value)} onBlur={blur} />
         <div style={{ fontSize: 11, color: "#3E3E4A", marginTop: 4 }}>Use {"{number}"} and {"{company}"} as placeholders</div>
       </Field>
       <Field label="Email Signature">
-        <textarea style={{ ...inputStyle, height: 60, resize: "vertical" }} value={form.emailSignature} onChange={(e) => upd("emailSignature", e.target.value)} />
+        <textarea style={{ ...inputStyle, height: 60, resize: "vertical" }} value={form.emailSignature} onChange={(e) => upd("emailSignature", e.target.value)} onBlur={blur} />
       </Field>
-      <SettingsSaveButton saving={saving} saved={saved} />
-    </form>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", marginTop: 4, display: "block" }}>Saved</span>}
+    </div>
   );
 }
 
 function SettingsExpenses({ settings, onSave }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void> }) {
   const [defaultTaxDeductible, setDefaultTaxDeductible] = useState(settings.defaultTaxDeductible === 1);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    await onSave({ defaultTaxDeductible: defaultTaxDeductible ? 1 : 0 });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const { save, saved } = useAutoSave(onSave);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <button type="button" onClick={() => setDefaultTaxDeductible(!defaultTaxDeductible)}
+        <button type="button" onClick={() => { const next = !defaultTaxDeductible; setDefaultTaxDeductible(next); save({ defaultTaxDeductible: next ? 1 : 0 }); }}
           style={{ width: 36, height: 20, borderRadius: 10, border: "none", background: defaultTaxDeductible ? "#EDEDF0" : "#2A2A30", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
           <div style={{ width: 16, height: 16, borderRadius: 8, background: defaultTaxDeductible ? "#0A0A0C" : "#5E5E6E", position: "absolute", top: 2, left: defaultTaxDeductible ? 18 : 2, transition: "left 0.2s, background 0.2s" }} />
         </button>
         <span style={{ fontSize: 13, color: "#EDEDF0" }}>Default new expenses as tax deductible</span>
       </div>
-      <SettingsSaveButton saving={saving} saved={saved} />
-    </form>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", display: "block" }}>Saved</span>}
+    </div>
+  );
+}
+
+function SettingsGoals({ settings, onSave }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void> }) {
+  const formRef = useRef({
+    revenueGoal: settings.revenueGoal ? String(settings.revenueGoal) : "",
+    seTaxRate: String(settings.selfEmploymentTaxRate ?? 15.3),
+    incomeTaxRate: String(settings.estimatedIncomeTaxRate ?? 22),
+  });
+  const [form, setForm] = useState(formRef.current);
+  const { save, saved } = useAutoSave(onSave);
+  const upd = (k: string, v: string) => { const next = { ...formRef.current, [k]: v }; formRef.current = next; setForm(next); };
+  const blur = () => save({ revenueGoal: parseFloat(formRef.current.revenueGoal) || 0, selfEmploymentTaxRate: parseFloat(formRef.current.seTaxRate) || 0, estimatedIncomeTaxRate: parseFloat(formRef.current.incomeTaxRate) || 0 });
+
+  return (
+    <div>
+      <Field label="Annual Revenue Goal">
+        <div style={{ position: "relative" }}>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#5E5E6E", fontSize: 14, pointerEvents: "none" }}>$</span>
+          <input style={{ ...inputStyle, paddingLeft: 24 }} type="number" min="0" step="1000" value={form.revenueGoal} onChange={(e) => upd("revenueGoal", e.target.value)} onBlur={blur} placeholder="e.g. 300000" />
+        </div>
+      </Field>
+      <div style={{ fontSize: 12, color: "#3E3E4A", marginTop: -12, marginBottom: 20 }}>
+        Set a yearly revenue target to track your progress on the dashboard and revenue page.
+      </div>
+
+      <div style={{ borderTop: "1px solid #1C1C20", marginTop: 8, paddingTop: 24, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: "#7B7B88", marginBottom: 4 }}>Tax Estimates</div>
+        <div style={{ fontSize: 12, color: "#3E3E4A", marginBottom: 16 }}>
+          Used to estimate quarterly tax set-aside amounts on the Revenue page.
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Self-Employment Tax Rate">
+          <div style={{ position: "relative" }}>
+            <input style={{ ...inputStyle, paddingRight: 28 }} type="number" min="0" max="50" step="0.1" value={form.seTaxRate} onChange={(e) => upd("seTaxRate", e.target.value)} onBlur={blur} placeholder="15.3" />
+            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#5E5E6E", fontSize: 14, pointerEvents: "none" }}>%</span>
+          </div>
+        </Field>
+        <Field label="Income Tax Rate">
+          <div style={{ position: "relative" }}>
+            <input style={{ ...inputStyle, paddingRight: 28 }} type="number" min="0" max="60" step="1" value={form.incomeTaxRate} onChange={(e) => upd("incomeTaxRate", e.target.value)} onBlur={blur} placeholder="22" />
+            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#5E5E6E", fontSize: 14, pointerEvents: "none" }}>%</span>
+          </div>
+        </Field>
+      </div>
+      <div style={{ fontSize: 12, color: "#3E3E4A", marginTop: -12, marginBottom: 20, lineHeight: 1.5 }}>
+        SE tax is 15.3% for sole proprietors. S-corp owners paying a salary can set this to 0%.
+        Income tax is your combined federal + state rate.
+      </div>
+      {saved && <span style={{ fontSize: 11, color: "#4ADE80", display: "block" }}>Saved</span>}
+    </div>
+  );
+}
+
+// ============================================================
+// SETTINGS — EXPORT
+// ============================================================
+
+function csvEscape(val: any): string {
+  if (val == null) return "";
+  const s = String(val);
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function toCsv(headers: string[], rows: any[][]): string {
+  return [headers.map(csvEscape).join(","), ...rows.map((r) => r.map(csvEscape).join(","))].join("\n");
+}
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function SettingsExport({ clients, projects, invoices, expenses, prospects, lineItems }: { clients: any[]; projects: any[]; invoices: any[]; expenses: any[]; prospects: any[]; lineItems: any[] }) {
+  const [yearFilter, setYearFilter] = useState("all");
+
+  // Collect available years from all date fields
+  const allYears = new Set<string>();
+  invoices.forEach((i) => { if (i.issueDate) allYears.add(i.issueDate.slice(0, 4)); });
+  expenses.forEach((e) => { if (e.date) allYears.add(e.date.slice(0, 4)); });
+  prospects.forEach((p) => { if (p.createdAt) allYears.add(p.createdAt.slice(0, 4)); });
+  clients.forEach((c) => { if (c.createdAt) allYears.add(c.createdAt.slice(0, 4)); });
+  projects.forEach((p) => { if (p.createdAt) allYears.add(p.createdAt.slice(0, 4)); });
+  const years = Array.from(allYears).sort().reverse();
+
+  function filterByYear<T extends Record<string, any>>(items: T[], dateField: string): T[] {
+    if (yearFilter === "all") return items;
+    return items.filter((item) => item[dateField]?.startsWith(yearFilter));
+  }
+
+  const clientMap = Object.fromEntries(clients.map((c) => [c.id, c.name]));
+  const projectMap = Object.fromEntries(projects.map((p) => [p.id, p.name]));
+
+  const exportConfigs = [
+    {
+      key: "prospects",
+      label: "Prospects",
+      icon: <UserPlus size={14} />,
+      build: () => {
+        const filtered = filterByYear(prospects, "createdAt");
+        const headers = ["Company", "Contact", "Email", "Opportunity", "Status", "Deal Size", "Source", "Temperature", "Last Contact", "Next Action", "Notes", "Created"];
+        const rows = filtered.map((p) => [p.company, p.contact, p.email, p.opportunity, p.status, p.dealSize, p.source, p.temperature, p.lastContact, p.nextAction, p.notes, p.createdAt]);
+        return { csv: toCsv(headers, rows), count: filtered.length };
+      },
+    },
+    {
+      key: "clients",
+      label: "Clients",
+      icon: <Users size={14} />,
+      build: () => {
+        const filtered = filterByYear(clients, "createdAt");
+        const headers = ["Name", "Contact", "Email", "Phone", "Address", "Rate", "Status", "Notes", "Created"];
+        const rows = filtered.map((c) => [c.name, c.contact, c.email, c.phone, c.address, c.rate, c.status, c.notes, c.createdAt]);
+        return { csv: toCsv(headers, rows), count: filtered.length };
+      },
+    },
+    {
+      key: "projects",
+      label: "Projects",
+      icon: <FolderKanban size={14} />,
+      build: () => {
+        const filtered = filterByYear(projects, "createdAt");
+        const headers = ["Name", "Client", "Description", "Status", "Start Date", "End Date", "Rate", "Rate Type", "Created"];
+        const rows = filtered.map((p) => [p.name, clientMap[p.clientId] || p.clientId, p.description, p.status, p.startDate, p.endDate, p.rate, p.rateType, p.createdAt]);
+        return { csv: toCsv(headers, rows), count: filtered.length };
+      },
+    },
+    {
+      key: "invoices",
+      label: "Invoices",
+      icon: <FileText size={14} />,
+      build: () => {
+        const filtered = filterByYear(invoices, "issueDate");
+        const headers = ["Number", "Client", "Project", "Status", "Issue Date", "Due Date", "Paid Date", "Subtotal", "Tax", "Total", "Notes", "Recipients"];
+        const rows = filtered.map((i) => {
+          const recip = Array.isArray(i.recipients) ? i.recipients.join("; ") : "";
+          return [i.number, clientMap[i.clientId] || i.clientId, projectMap[i.projectId] || i.projectId || "", i.status, i.issueDate, i.dueDate, i.paidDate || "", i.subtotal, i.tax, i.total, i.notes, recip];
+        });
+        return { csv: toCsv(headers, rows), count: filtered.length };
+      },
+    },
+    {
+      key: "expenses",
+      label: "Expenses",
+      icon: <Receipt size={14} />,
+      build: () => {
+        const filtered = filterByYear(expenses, "date");
+        const headers = ["Date", "Vendor", "Description", "Category", "Amount", "Client", "Project", "Tax Deductible", "Recurring", "Notes"];
+        const rows = filtered.map((e) => [e.date, e.vendor, e.description, e.category, e.amount, clientMap[e.clientId] || e.clientId || "", projectMap[e.projectId] || e.projectId || "", e.taxDeductible ? "Yes" : "No", e.recurring ? "Yes" : "No", e.notes]);
+        return { csv: toCsv(headers, rows), count: filtered.length };
+      },
+    },
+  ];
+
+  function handleExport(config) {
+    const { csv, count } = config.build();
+    if (count === 0) return;
+    const suffix = yearFilter === "all" ? "all" : yearFilter;
+    downloadCsv(`${config.key}-${suffix}.csv`, csv);
+  }
+
+  function handleExportAll() {
+    for (const config of exportConfigs) {
+      const { csv, count } = config.build();
+      if (count > 0) {
+        const suffix = yearFilter === "all" ? "all" : yearFilter;
+        downloadCsv(`${config.key}-${suffix}.csv`, csv);
+      }
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: "#7B7B88", marginBottom: 4 }}>Export Data</div>
+        <div style={{ fontSize: 12, color: "#3E3E4A", lineHeight: 1.5 }}>
+          Download your data as CSV files. Each data type exports as a separate file.
+        </div>
+      </div>
+
+      {/* Year filter */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, color: "#5E5E6E", marginBottom: 8 }}>Time period</div>
+        <div style={{ display: "flex", gap: 4, background: "#0A0A0C", borderRadius: 6, padding: 2, border: "1px solid #1C1C20", width: "fit-content" }}>
+          <button onClick={() => setYearFilter("all")}
+            className={yearFilter !== "all" ? "act" : ""}
+            style={{ padding: "5px 12px", borderRadius: 4, border: "none", background: yearFilter === "all" ? "#1A1A1E" : "transparent", color: yearFilter === "all" ? "#EDEDF0" : "#3E3E4A", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+            All time
+          </button>
+          {years.map((y) => (
+            <button key={y} onClick={() => setYearFilter(y)}
+              className={yearFilter !== y ? "act" : ""}
+              style={{ padding: "5px 12px", borderRadius: 4, border: "none", background: yearFilter === y ? "#1A1A1E" : "transparent", color: yearFilter === y ? "#EDEDF0" : "#3E3E4A", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+              {y}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Export buttons */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {exportConfigs.map((config) => {
+          const { count } = config.build();
+          return (
+            <button key={config.key} onClick={() => handleExport(config)} disabled={count === 0}
+              className={count > 0 ? "act" : ""}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#111113", border: "1px solid #1C1C20", borderRadius: 6, color: count > 0 ? "#EDEDF0" : "#3E3E4A", cursor: count > 0 ? "pointer" : "default", fontFamily: "inherit", fontSize: 13, fontWeight: 400, transition: "all 0.15s", width: "100%", textAlign: "left" }}>
+              <span style={{ color: count > 0 ? "#5E5E6E" : "#2A2A32" }}>{config.icon}</span>
+              <span style={{ flex: 1 }}>{config.label}</span>
+              <span style={{ fontSize: 11, color: "#3E3E4A", fontFamily: "var(--font-jetbrains-mono), monospace" }}>{count} {count === 1 ? "record" : "records"}</span>
+              <Download size={13} style={{ color: count > 0 ? "#5E5E6E" : "#2A2A32" }} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Export all */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #1C1C20" }}>
+        <button onClick={handleExportAll}
+          className="act"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "transparent", border: "1px solid #1C1C20", borderRadius: 6, color: "#7B7B88", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500, transition: "all 0.15s" }}>
+          <Download size={12} />
+          Export all as CSV
+        </button>
+        <div style={{ fontSize: 11, color: "#3E3E4A", marginTop: 8 }}>
+          Downloads one CSV file per data type{yearFilter !== "all" ? ` for ${yearFilter}` : ""}.
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3349,7 +3825,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
   function renderPage() {
     const { page, sub, id } = route;
 
-    if (page === "dashboard") return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
+    if (page === "dashboard") return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} settings={settings} />;
 
     if (page === "prospects") {
       if (sub === "new") return <ProspectEditPage prospectId="new" prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} isMobile={isMobile} />;
@@ -3382,11 +3858,11 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
       return <ExpensesListPage expenses={expenses} clients={clients} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} onSave={saveExpense} onDelete={deleteExpense} onDuplicate={async (exp) => { await saveExpense({ ...exp, id: undefined, date: todayStr(), recurringSourceId: null }); }} isMobile={isMobile} />;
     }
 
-    if (page === "revenue") return <RevenuePage invoices={invoices} expenses={expenses} clients={clients} isMobile={isMobile} />;
+    if (page === "revenue") return <RevenuePage invoices={invoices} expenses={expenses} clients={clients} isMobile={isMobile} settings={settings} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
 
-    if (page === "settings") return <SettingsPage settings={settings} onSave={saveSettings} session={session} isMobile={isMobile} />;
+    if (page === "settings") return <SettingsPage settings={settings} onSave={saveSettings} session={session} isMobile={isMobile} clients={clients} projects={projects} invoices={invoices} expenses={expenses} prospects={prospects} lineItems={lineItems} />;
 
-    return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
+    return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} settings={settings} />;
   }
 
   if (loading || isMobile === null) {

@@ -218,6 +218,9 @@ const demoSettings = {
   reminderEmailSubject: "Reminder: Invoice {number} is overdue",
   emailSignature: "Thanks,\nAlex",
   defaultTaxDeductible: 1,
+  revenueGoal: 300000,
+  selfEmploymentTaxRate: 15.3,
+  estimatedIncomeTaxRate: 22,
   updatedAt: todayStr,
 };
 

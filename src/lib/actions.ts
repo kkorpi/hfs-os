@@ -357,6 +357,9 @@ export async function processRecurringExpenses() {
     if (existsThisMonth) continue;
 
     const day = template.recurringDay || 1;
+    // Don't generate until the recurring day has actually arrived
+    if (now.getDate() < day) continue;
+
     const dateStr = `${currentYearMonth}-${String(day).padStart(2, "0")}`;
     const id = generateId();
     const todayDate = todayStr();

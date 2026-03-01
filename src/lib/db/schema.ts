@@ -124,5 +124,10 @@ export const settings = sqliteTable("settings", {
   emailSignature: text("email_signature").default("Thanks,\nKevin"),
   // Expense Defaults
   defaultTaxDeductible: integer("default_tax_deductible").default(1),
+  // Revenue Goals
+  revenueGoal: real("revenue_goal").default(0),
+  // Tax Estimates
+  selfEmploymentTaxRate: real("self_employment_tax_rate").default(15.3),
+  estimatedIncomeTaxRate: real("estimated_income_tax_rate").default(22),
   updatedAt: text("updated_at").default(""),
 });

@@ -19,6 +19,9 @@ export const SETTINGS_DEFAULTS = {
   reminderEmailSubject: "Reminder: Invoice {number} is overdue",
   emailSignature: "Thanks,\nKevin",
   defaultTaxDeductible: 1,
+  revenueGoal: 0,
+  selfEmploymentTaxRate: 15.3,
+  estimatedIncomeTaxRate: 22,
   updatedAt: "",
 };
 
