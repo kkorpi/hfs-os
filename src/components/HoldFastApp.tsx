@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun, Menu } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, ArrowRight, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun, Menu } from "lucide-react";
 import {
   getAllData,
   createClient as dbCreateClient,
@@ -31,6 +31,7 @@ import {
 } from "@/lib/actions";
 import { SETTINGS_DEFAULTS } from "@/lib/settings-defaults";
 import type { Settings } from "@/lib/settings-defaults";
+import { getDemoData, getDemoSettings } from "@/lib/demo-data";
 
 // ============================================================
 // HOLD FAST STUDIO — Invoice & Client OS
@@ -209,6 +210,20 @@ const ANIMATION_STYLES = `
 @keyframes modalIn { from { opacity: 0; transform: scale(0.97) } to { opacity: 1; transform: scale(1) } }
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes toastOut { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(8px) } }
+@keyframes loaderPulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes loaderShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* Selection */
+::selection { background: rgba(237,237,240,0.3); color: #fff; }
+
+/* Global interactive hover */
+button, a { transition: filter 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease; }
+button:hover:not(:disabled) { filter: brightness(1.15); }
+button:active:not(:disabled) { filter: brightness(0.95); }
+
+/* Ghost action buttons (invoice actions, etc.) */
+.act { filter: none !important; }
+.act:hover { background: #1A1A1E !important; color: #EDEDF0 !important; filter: none !important; }
 `;
 
 function AnimationStyles() {
@@ -420,6 +435,7 @@ function TimePeriodFilter({ value, onChange }: { value: string; onChange: (v: st
     <div style={{ display: "flex", gap: 4, background: "#0A0A0C", borderRadius: 6, padding: 2, border: "1px solid #1C1C20" }}>
       {options.map((o) => (
         <button key={o.key} onClick={() => onChange(o.key)}
+          className={value !== o.key ? "act" : ""}
           style={{ padding: "5px 12px", borderRadius: 4, border: "none", background: value === o.key ? "#1A1A1E" : "transparent", color: value === o.key ? "#EDEDF0" : "#3E3E4A", fontSize: 11, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
           {o.label}
         </button>
@@ -469,7 +485,7 @@ function StatusBadge({ status, detail }: { status: string; detail?: string }) {
 const GENERAL_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   active: { bg: "rgba(74,222,128,0.10)", text: "#4ADE80" },
   archived: { bg: "#1A1A1E", text: "#5E5E6E" },
-  completed: { bg: "rgba(96,165,250,0.10)", text: "#60A5FA" },
+  completed: { bg: "#1A1A1E", text: "#5E5E6E" },
 };
 
 function StatusChip({ status }: { status: string }) {
@@ -745,9 +761,9 @@ function DatePicker({ value, onChange, onBlur, style: overrideStyle, triggerStyl
       </button>
       <div style={{ position: "absolute", ...dropPos, background: "#141416", border: "1px solid #1C1C20", borderRadius: 8, padding: 12, zIndex: 100, boxShadow: "0 8px 24px rgba(0,0,0,0.6)", width: 260, opacity: open ? 1 : 0, transform: open ? "translateY(0)" : "translateY(-4px)", pointerEvents: open ? "auto" : "none", transition: "opacity 150ms ease, transform 150ms ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}><ChevronLeft size={16} /></button>
+            <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", borderRadius: 4 }}><ChevronLeft size={16} /></button>
             <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{monthLabel}</span>
-            <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}><ChevronRight size={16} /></button>
+            <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", borderRadius: 4 }}><ChevronRight size={16} /></button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0, textAlign: "center" }}>
             {weekDays.map((wd) => <div key={wd} style={{ padding: "4px 0", fontSize: 10, color: "#3E3E4A", fontWeight: 600 }}>{wd}</div>)}
@@ -889,9 +905,9 @@ function DueDatePicker({ issueDate, value, onChange, onBlur, style: overrideStyl
                 <ChevronLeft size={14} /> Back
               </button>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}><ChevronLeft size={16} /></button>
+                <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", borderRadius: 4 }}><ChevronLeft size={16} /></button>
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{calMonthLabel}</span>
-                <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}><ChevronRight size={16} /></button>
+                <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", borderRadius: 4 }}><ChevronRight size={16} /></button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0, textAlign: "center" }}>
                 {weekDays.map((wd) => <div key={wd} style={{ padding: "4px 0", fontSize: 10, color: "#3E3E4A", fontWeight: 600 }}>{wd}</div>)}
@@ -998,11 +1014,10 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
         <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(5, 1fr)", gap: isMobile ? 8 : 16, marginBottom: isMobile ? 20 : 32 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 16, marginBottom: isMobile ? 20 : 32 }}>
         <StatCard label="This Month" value={formatCurrency(thisMonthRevenue)} sub={new Date().toLocaleString("en", { month: "long", year: "numeric" })} isMobile={isMobile} />
         <StatCard label="Revenue" value={formatCurrency(periodRevenue)} sub={periodLabel} isMobile={isMobile} />
-        <StatCard label="Outstanding" value={formatCurrency(outstandingTotal)} sub={`${outstandingInvoices.length} invoice${outstandingInvoices.length !== 1 ? "s" : ""}`} warn={outstandingTotal > 0} isMobile={isMobile} />
-        <StatCard label="Overdue" value={String(overdueInvoices.length)} sub={overdueInvoices.length > 0 ? formatCurrency(overdueInvoices.reduce((s, i) => s + i.total, 0)) : "All clear"} warn={overdueInvoices.length > 0} isMobile={isMobile} />
+        <StatCard label="Outstanding" value={formatCurrency(outstandingTotal)} sub={`${outstandingInvoices.length} invoice${outstandingInvoices.length !== 1 ? "s" : ""}`} isMobile={isMobile} />
         <StatCard label="Expenses" value={formatCurrency(periodExpenses)} sub={periodLabel} isMobile={isMobile} />
       </div>
 
@@ -1029,7 +1044,7 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: 15, fontWeight: 500, margin: 0, color: "#7B7B88" }}>Recent Invoices</h2>
-          <button style={{ ...btnSecondary, fontSize: 12, padding: "6px 14px" }} onClick={() => navigate({ page: "invoices" })}>View All</button>
+          <button style={{ background: "none", border: "none", color: "#5E5E6E", fontSize: 12, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4, padding: 0 }} onClick={() => navigate({ page: "invoices" })}>View All <ArrowRight size={12} /></button>
         </div>
         <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
           {invoices.sort((a, b) => (b.issueDate > a.issueDate ? 1 : -1)).slice(0, isMobile ? 5 : 8).map((inv, idx) => (
@@ -1061,7 +1076,7 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: 15, fontWeight: 500, margin: 0, color: "#7B7B88" }}>Recent Expenses</h2>
-          <button style={{ ...btnSecondary, fontSize: 12, padding: "6px 14px" }} onClick={() => navigate({ page: "expenses" })}>View All</button>
+          <button style={{ background: "none", border: "none", color: "#5E5E6E", fontSize: 12, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4, padding: 0 }} onClick={() => navigate({ page: "expenses" })}>View All <ArrowRight size={12} /></button>
         </div>
         <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
           {expenses.sort((a, b) => (b.date > a.date ? 1 : -1)).slice(0, 5).map((exp, idx) => (
@@ -1372,7 +1387,7 @@ function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate, i
                     {tempIcon(p.temperature)}
                     <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{p.company || "Untitled"}</span>
                   </div>
-                  <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.status}</span>
+                  <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap", width: "fit-content" }}>{p.status}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: "#5E5E6E" }}>{p.opportunity}{p.dealSize ? ` · ${p.dealSize}` : ""}</span>
@@ -1388,7 +1403,7 @@ function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate, i
                 </div>
                 <span style={{ fontSize: 12, color: "#7B7B88" }}>{p.opportunity}</span>
                 <span style={{ fontSize: 12, color: "#7B7B88", fontFamily: "var(--font-mono), monospace" }}>{p.dealSize || "—"}</span>
-                <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.status}</span>
+                <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap", width: "fit-content" }}>{p.status}</span>
                 <span style={{ fontSize: 12, color: "#5E5E6E" }}>{p.lastContact ? formatDate(p.lastContact) : "—"}</span>
                 <span style={{ fontSize: 12, color: isOverdue ? "#F87171" : "#7B7B88", fontWeight: isOverdue ? 600 : 400 }}>{p.nextAction ? formatDate(p.nextAction) : "—"}</span>
                 <ActionMenu items={[
@@ -1485,7 +1500,7 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
             : [{ icon: <PlayCircle size={13} />, label: "Reactivate", onClick: () => onSave({ ...proj, status: "active" }) }];
           return (
             <div key={proj.id} onClick={() => navigate({ page: "projects", sub: "edit", id: proj.id })}
-              style={isMobile ? { padding: "14px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" } : { display: "grid", gridTemplateColumns: "1fr 160px 140px 120px auto 36px", gap: 16, alignItems: "center", padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
+              style={isMobile ? { padding: "14px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" } : { display: "grid", gridTemplateColumns: "1fr 160px 140px 120px 100px 36px", gap: 16, alignItems: "center", padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#2A2A30")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1C1C20")}>
               {isMobile ? (<>
@@ -2058,28 +2073,18 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {form.status === "draft" ? (<>
-            <button style={{ ...btnPrimary, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => setShowSendModal(true)}>
-              <Send size={11} /> Send
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => setShowSendModal(true)}>
+              <Send size={12} /> Send
             </button>
-            <a href={`/invoice/${invoice.viewToken}?preview`} target="_blank" rel="noopener noreferrer" style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}><Eye size={12} /> Preview</a>
-            <button style={{ ...btnDanger, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={11} /> Delete</button>
+            <a className="act" href={`/invoice/${invoice.viewToken}?preview`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><Eye size={12} /> Preview</a>
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
             <ActionMenu items={[
               { icon: <Check size={13} />, label: "Mark Paid", onClick: () => setShowPaidModal(true) },
               { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(invoice) },
               { icon: <Copy size={13} />, label: "Copy Link", onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/invoice/${invoice.viewToken}`); _toastFn("Link copied", "info"); } },
             ]} />
           </>) : form.status === "paid" ? (<>
-            <button style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => setShowReminderModal(true)}>
-              <Send size={11} /> Remind
-            </button>
-            <button style={{ ...btnDanger, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={11} /> Delete</button>
-            <ActionMenu items={[
-              { icon: <Send size={13} />, label: "Resend", onClick: () => setShowSendModal(true) },
-              { icon: <Eye size={13} />, label: "Preview", onClick: () => window.open(`/invoice/${invoice.viewToken}?preview`, "_blank") },
-              { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(invoice) },
-              { icon: <Copy size={13} />, label: "Copy Link", onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/invoice/${invoice.viewToken}`); _toastFn("Link copied", "info"); } },
-              { icon: null, label: "", onClick: () => {}, divider: true },
-              { icon: <X size={13} />, label: "Mark Unpaid", onClick: () => {
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => {
                 setForm((prev) => {
                   const revertStatus = prev.sentDate ? (prev.dueDate < todayStr() ? "overdue" : "outstanding") : "draft";
                   const next = { ...prev, status: revertStatus, paidDate: null };
@@ -2088,14 +2093,14 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                 });
                 persist();
                 onMarkPaid(invoice.id, null);
-              }},
-            ]} />
+              }}><X size={12} /> Mark Unpaid</button>
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
           </>) : (<>
-            <button style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => setShowReminderModal(true)}>
-              <Send size={11} /> Remind
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => setShowReminderModal(true)}>
+              <Send size={12} /> Send Reminder
             </button>
-            <button style={{ ...btnPrimary, fontSize: 11, padding: "6px 12px", background: "rgba(61,214,140,0.22)", color: "#4ADE80", display: "flex", alignItems: "center", gap: 5 }} onClick={() => setShowPaidModal(true)}><Check size={11} /> Mark Paid</button>
-            <button style={{ ...btnDanger, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={11} /> Delete</button>
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => setShowPaidModal(true)}><Check size={12} /> Mark Paid</button>
+            <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
             <ActionMenu items={[
               { icon: <Send size={13} />, label: "Resend", onClick: () => setShowSendModal(true) },
               { icon: <Eye size={13} />, label: "Preview", onClick: () => window.open(`/invoice/${invoice.viewToken}?preview`, "_blank") },
@@ -2779,6 +2784,7 @@ function SettingsPage({ settings, onSave, session, isMobile }: { settings: Setti
       <div style={{ display: "flex", gap: 4, background: "#0A0A0C", borderRadius: 6, padding: 2, border: "1px solid #1C1C20", marginBottom: isMobile ? 20 : 32, width: isMobile ? "100%" : "fit-content", overflowX: isMobile ? "auto" : "visible", WebkitOverflowScrolling: "touch" }}>
         {settingsTabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={activeTab !== tab.key ? "act" : ""}
             style={{ padding: isMobile ? "6px 10px" : "6px 14px", borderRadius: 4, border: "none", background: activeTab === tab.key ? "#1A1A1E" : "transparent", color: activeTab === tab.key ? "#EDEDF0" : "#3E3E4A", fontSize: isMobile ? 11 : 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0 }}>
             {tab.label}
           </button>
@@ -2793,18 +2799,20 @@ function SettingsPage({ settings, onSave, session, isMobile }: { settings: Setti
         {activeTab === "expenses" && <SettingsExpenses settings={settings} onSave={onSave} />}
       </div>
 
-      {/* Sign out */}
-      <div style={{ maxWidth: 560, marginTop: 48, paddingTop: 24, borderTop: "1px solid #1C1C20" }}>
-        <form action={async () => {
-          sessionStorage.removeItem("hfs-route");
-          const { signOut } = await import("next-auth/react");
-          await signOut({ callbackUrl: "/login" });
-        }}>
-          <button type="submit" style={{ ...btnDanger, display: "flex", alignItems: "center", gap: 8 }}>
-            <LogOut size={14} /> Sign Out
-          </button>
-        </form>
-      </div>
+      {/* Sign out — only on Profile tab */}
+      {activeTab === "profile" && (
+        <div style={{ maxWidth: 560, marginTop: 48, paddingTop: 24, borderTop: "1px solid #1C1C20" }}>
+          <form action={async () => {
+            sessionStorage.removeItem("hfs-route");
+            const { signOut } = await import("next-auth/react");
+            await signOut({ callbackUrl: "/login" });
+          }}>
+            <button type="submit" style={{ background: "none", border: "none", color: "#5E5E6E", fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: "4px 0" }}>
+              Sign Out
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
@@ -3046,7 +3054,9 @@ function SettingsExpenses({ settings, onSave }: { settings: Settings; onSave: (d
 // ============================================================
 // MAIN APP
 // ============================================================
-export default function HoldFastApp({ session }: { session?: any }) {
+export default function HoldFastApp({ session: realSession }: { session?: any }) {
+  const [isDemo] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo"));
+  const session = isDemo ? { user: { name: "Alex Morgan", email: "alex@basecampstudio.co", image: "https://api.dicebear.com/9.x/notionists/svg?seed=alex-morgan&backgroundColor=0a0a0c" } } : realSession;
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -3079,8 +3089,20 @@ export default function HoldFastApp({ session }: { session?: any }) {
   });
   useEffect(() => { localStorage.setItem("hfs-time-period", timePeriod); }, [timePeriod]);
 
-  // Load data from database on mount
+  // Load data from database on mount (or demo data if ?demo)
   useEffect(() => {
+    if (isDemo) {
+      const data = getDemoData();
+      setClients(data.clients);
+      setProjects(data.projects);
+      setInvoices(data.invoices);
+      setLineItems(data.lineItems);
+      setExpenses(data.expenses);
+      setProspects(data.prospects);
+      setSettings(getDemoSettings() as Settings);
+      setLoading(false);
+      return;
+    }
     Promise.all([getAllData(), getSettings()]).then(async ([data, settingsData]) => {
       setClients(data.clients);
       setProjects(data.projects);
@@ -3141,21 +3163,24 @@ export default function HoldFastApp({ session }: { session?: any }) {
     setSidebarOpen(false);
   };
 
-  // --- CRUD (async, backed by server actions) ---
+  // --- CRUD (async, backed by server actions — demo mode skips db calls) ---
+  const _demoId = () => `demo-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
   async function saveClient(data, { skipNavigate, silent } = {} as any) {
     if (data.id && clients.find((c) => c.id === data.id)) {
-      const updated = await dbUpdateClient(data.id, data);
+      const updated = isDemo ? data : await dbUpdateClient(data.id, data);
       setClients((prev) => prev.map((c) => (c.id === data.id ? { ...c, ...data, ...updated } : c)));
     } else {
-      const newClient = await dbCreateClient(data);
+      const id = _demoId();
+      const newClient = isDemo ? { ...data, id, createdAt: todayStr(), updatedAt: todayStr() } : await dbCreateClient(data);
       setClients((prev) => [...prev, newClient]);
       if (!silent) _toastFn("Client created");
       if (!skipNavigate) navigate({ page: "clients", sub: "detail", id: newClient.id });
-      return newClient.id;
+      return newClient;
     }
   }
   async function deleteClient(id) {
-    await dbDeleteClient(id);
+    if (!isDemo) await dbDeleteClient(id);
     const deleted = clients.find((c) => c.id === id);
     const deletedProjects = projects.filter((p) => p.clientId === id);
     const deletedInvoices = invoices.filter((i) => i.clientId === id);
@@ -3167,45 +3192,44 @@ export default function HoldFastApp({ session }: { session?: any }) {
     setLineItems((prev) => prev.filter((li) => !deletedInvoices.some((i) => i.id === li.invoiceId)));
     setExpenses((prev) => prev.filter((e) => e.clientId !== id));
     _toastFn("Client deleted", "info", deleted ? async () => {
-      await dbCreateClient(deleted);
+      if (!isDemo) { await dbCreateClient(deleted); for (const p of deletedProjects) { await dbCreateProject(p); } for (const i of deletedInvoices) { await dbCreateInvoice(i, deletedLineItems.filter((li) => li.invoiceId === i.id)); } for (const e of deletedExpenses) { await dbCreateExpense(e); } }
       setClients((prev) => [...prev, deleted]);
-      for (const p of deletedProjects) { await dbCreateProject(p); }
       setProjects((prev) => [...prev, ...deletedProjects]);
-      for (const i of deletedInvoices) { await dbCreateInvoice(i, deletedLineItems.filter((li) => li.invoiceId === i.id)); }
       setInvoices((prev) => [...prev, ...deletedInvoices]);
       setLineItems((prev) => [...prev, ...deletedLineItems]);
-      for (const e of deletedExpenses) { await dbCreateExpense(e); }
       setExpenses((prev) => [...prev, ...deletedExpenses]);
     } : undefined);
   }
   async function saveProject(data) {
     if (data.id && projects.find((p) => p.id === data.id)) {
-      const updated = await dbUpdateProject(data.id, data);
+      const updated = isDemo ? data : await dbUpdateProject(data.id, data);
       setProjects((prev) => prev.map((p) => (p.id === data.id ? { ...p, ...data, ...updated } : p)));
     } else {
-      const newProject = await dbCreateProject(data);
+      const id = _demoId();
+      const newProject = isDemo ? { ...data, id, createdAt: todayStr(), updatedAt: todayStr() } : await dbCreateProject(data);
       setProjects((prev) => [...prev, newProject]);
       _toastFn("Project created");
       return newProject.id;
     }
   }
   async function deleteProject(id) {
-    await dbDeleteProject(id);
+    if (!isDemo) await dbDeleteProject(id);
     const deleted = projects.find((p) => p.id === id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
     _toastFn("Project deleted", "info", deleted ? async () => {
-      await dbCreateProject(deleted);
+      if (!isDemo) await dbCreateProject(deleted);
       setProjects((prev) => [...prev, deleted]);
     } : undefined);
   }
   async function saveInvoice(data, items) {
     if (data.id && invoices.find((i) => i.id === data.id)) {
-      const updated = await dbUpdateInvoice(data.id, data, items);
+      const updated = isDemo ? data : await dbUpdateInvoice(data.id, data, items);
       setInvoices((prev) => prev.map((i) => (i.id === data.id ? { ...i, ...data, ...updated } : i)));
       setLineItems((prev) => [...prev.filter((li) => li.invoiceId !== data.id), ...items.map((item) => ({ ...item, invoiceId: data.id }))]);
       return data.id;
     } else {
-      const result = await dbCreateInvoice(data, items);
+      const id = _demoId();
+      const result = isDemo ? { ...data, id, createdAt: todayStr(), updatedAt: todayStr() } : await dbCreateInvoice(data, items);
       setInvoices((prev) => [...prev, result]);
       setLineItems((prev) => [...prev, ...items.map((item, idx) => ({ ...item, id: `${result.id}-li${idx}`, invoiceId: result.id }))]);
       _toastFn("Invoice created");
@@ -3213,21 +3237,32 @@ export default function HoldFastApp({ session }: { session?: any }) {
     }
   }
   async function deleteInvoice(id) {
-    await dbDeleteInvoice(id);
+    if (!isDemo) await dbDeleteInvoice(id);
     const deleted = invoices.find((i) => i.id === id);
     const deletedItems = lineItems.filter((li) => li.invoiceId === id);
     setInvoices((prev) => prev.filter((i) => i.id !== id));
     setLineItems((prev) => prev.filter((li) => li.invoiceId !== id));
     _toastFn("Invoice deleted", "info", deleted ? async () => {
-      await dbCreateInvoice(deleted, deletedItems);
+      if (!isDemo) await dbCreateInvoice(deleted, deletedItems);
       setInvoices((prev) => [...prev, deleted]);
       setLineItems((prev) => [...prev, ...deletedItems]);
     } : undefined);
   }
   async function markPaid(id, paidDate?) {
-    const result = await dbMarkPaid(id, paidDate === undefined ? todayStr() : paidDate);
+    if (!isDemo) {
+      const result = await dbMarkPaid(id, paidDate === undefined ? todayStr() : paidDate);
+      if (paidDate === null) {
+        setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...result } : i)));
+        _toastFn("Invoice marked as unpaid", "info");
+        return;
+      }
+    }
     if (paidDate === null) {
-      setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...result } : i)));
+      setInvoices((prev) => prev.map((i) => {
+        if (i.id !== id) return i;
+        const revertStatus = i.sentDate ? (i.dueDate < todayStr() ? "overdue" : "outstanding") : "draft";
+        return { ...i, status: revertStatus, paidDate: null };
+      }));
       _toastFn("Invoice marked as unpaid", "info");
     } else {
       setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, status: "paid", paidDate: paidDate || todayStr() } : i)));
@@ -3235,47 +3270,49 @@ export default function HoldFastApp({ session }: { session?: any }) {
     }
   }
   async function markSent(id) {
-    await dbMarkSent(id);
+    if (!isDemo) await dbMarkSent(id);
     setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, status: "outstanding", sentDate: todayStr() } : i)));
     _toastFn("Invoice marked as sent");
   }
 
   async function saveExpense(data) {
     if (data.id && expenses.find((e) => e.id === data.id)) {
-      const updated = await dbUpdateExpense(data.id, data);
+      const updated = isDemo ? data : await dbUpdateExpense(data.id, data);
       setExpenses((prev) => prev.map((e) => (e.id === data.id ? { ...e, ...data, ...updated } : e)));
     } else {
-      const newExpense = await dbCreateExpense(data);
+      const id = _demoId();
+      const newExpense = isDemo ? { ...data, id, createdAt: todayStr(), updatedAt: todayStr() } : await dbCreateExpense(data);
       setExpenses((prev) => [...prev, newExpense]);
       _toastFn("Expense created");
     }
   }
   async function deleteExpense(id) {
-    await dbDeleteExpense(id);
+    if (!isDemo) await dbDeleteExpense(id);
     const deleted = expenses.find((e) => e.id === id);
     setExpenses((prev) => prev.filter((e) => e.id !== id));
     _toastFn("Expense deleted", "info", deleted ? async () => {
-      await dbCreateExpense(deleted);
+      if (!isDemo) await dbCreateExpense(deleted);
       setExpenses((prev) => [...prev, deleted]);
     } : undefined);
   }
 
   async function saveProspect(data) {
     if (data.id && prospects.find((p) => p.id === data.id)) {
-      const updated = await dbUpdateProspect(data.id, data);
+      const updated = isDemo ? data : await dbUpdateProspect(data.id, data);
       setProspects((prev) => prev.map((p) => (p.id === data.id ? { ...p, ...data, ...updated } : p)));
     } else {
-      const newProspect = await dbCreateProspect(data);
+      const id = _demoId();
+      const newProspect = isDemo ? { ...data, id, createdAt: todayStr(), updatedAt: todayStr() } : await dbCreateProspect(data);
       setProspects((prev) => [...prev, newProspect]);
       _toastFn("Prospect created");
     }
   }
   async function deleteProspect(id) {
-    await dbDeleteProspect(id);
+    if (!isDemo) await dbDeleteProspect(id);
     const deleted = prospects.find((p) => p.id === id);
     setProspects((prev) => prev.filter((p) => p.id !== id));
     _toastFn("Prospect deleted", "info", deleted ? async () => {
-      await dbCreateProspect(deleted);
+      if (!isDemo) await dbCreateProspect(deleted);
       setProspects((prev) => [...prev, deleted]);
     } : undefined);
   }
@@ -3289,7 +3326,7 @@ export default function HoldFastApp({ session }: { session?: any }) {
   }
 
   async function saveSettings(data: Partial<Settings>) {
-    const updated = await dbUpdateSettings(data);
+    const updated = isDemo ? { ...settings, ...data } : await dbUpdateSettings(data);
     setSettings(updated as Settings);
     _toastFn("Settings saved");
   }
@@ -3351,9 +3388,19 @@ export default function HoldFastApp({ session }: { session?: any }) {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", height: "100vh", background: "#0A0A0C", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#3E3E4A", fontSize: 14 }}>Loading...</div>
+      <>
+      <AnimationStyles />
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0A0A0C", alignItems: "center", justifyContent: "center", gap: 14 }}>
+        <svg width="24" height="24" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: "loaderPulse 2s ease-in-out infinite" }}>
+          <rect width="210" height="210" rx="105" fill="white"/>
+          <path d="M59 113.144C59 111.777 59.5924 110.387 60.7773 108.974L120.387 34.736C121.891 32.8675 123.508 31.9561 125.24 32.0016C126.972 32.0472 128.316 32.7764 129.273 34.1891C130.276 35.5563 130.322 37.402 129.41 39.7262L109.928 92.4313H146.979C148.391 92.4313 149.531 92.8643 150.396 93.7301C151.308 94.596 151.764 95.667 151.764 96.943C151.764 98.3102 151.194 99.723 150.055 101.181L90.4453 175.351C88.9414 177.22 87.3008 178.131 85.5234 178.086C83.7917 178.086 82.4473 177.379 81.4902 175.966C80.5332 174.554 80.4876 172.685 81.3535 170.361L100.904 117.656H63.8535C62.4408 117.656 61.2786 117.223 60.3672 116.357C59.4557 115.491 59 114.42 59 113.144Z" fill="black"/>
+        </svg>
+        <div style={{ fontSize: 10, fontWeight: 500, color: "#5E5E6E", letterSpacing: "1.5px", fontFamily: "var(--font-jetbrains-mono), monospace", textTransform: "uppercase" }}>Hold Fast OS</div>
+        <div style={{ width: 120, height: 2, background: "#1C1C20", borderRadius: 1, overflow: "hidden", marginTop: 2 }}>
+          <div style={{ width: "100%", height: "100%", background: "#3E3E4A", borderRadius: 1, animation: "loaderShimmer 1.2s ease-in-out infinite" }} />
+        </div>
       </div>
+      </>
     );
   }
 
