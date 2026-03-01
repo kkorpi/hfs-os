@@ -166,7 +166,7 @@ export async function createInvoice(
 ) {
   await requireAuth();
   const id = (data.id as string) || generateId();
-  const viewToken = (data.viewToken as string) || generateId().replace(/-/g, "").substring(0, 12);
+  const viewToken = (data.viewToken as string) || crypto.randomUUID().replace(/-/g, "");
   const now = todayStr();
 
   const row = {
