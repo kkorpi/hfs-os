@@ -46,7 +46,9 @@ function formatCurrency(amount) {
 }
 function formatDate(dateStr) {
   if (!dateStr) return "—";
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const d = new Date((dateStr.length > 10 ? dateStr.slice(0, 10) : dateStr) + "T00:00:00");
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 function daysBetween(d1, d2) {
   const a = new Date(d1 + "T00:00:00");
@@ -2133,7 +2135,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
             detail={
               form.status === "paid" && form.paidDate ? formatDate(form.paidDate) :
               form.status === "overdue" ? `${Math.abs(daysBetween(form.dueDate, todayStr()))} days` :
-              form.viewedDate ? `Viewed ${formatDate(form.viewedDate)}` :
+              form.viewedDate && formatDate(form.viewedDate) !== "—" ? `Viewed ${formatDate(form.viewedDate)}` :
               undefined
             }
           />

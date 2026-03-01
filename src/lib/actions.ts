@@ -464,7 +464,7 @@ export async function deleteProspect(id: string) {
 export async function recordInvoiceView(token: string) {
   const invoice = await db.select().from(invoices).where(eq(invoices.viewToken, token)).get();
   if (invoice && !invoice.viewedDate) {
-    await db.update(invoices).set({ viewedDate: new Date().toISOString() }).where(eq(invoices.id, invoice.id));
+    await db.update(invoices).set({ viewedDate: new Date().toISOString().slice(0, 10) }).where(eq(invoices.id, invoice.id));
   }
 }
 
