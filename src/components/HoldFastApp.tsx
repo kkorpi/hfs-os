@@ -3390,7 +3390,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
     return (
       <>
       <AnimationStyles />
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0A0A0C", alignItems: "center", justifyContent: "center", gap: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0A0A0C", alignItems: "center", justifyContent: "center", gap: 14 }}>
         <svg width="24" height="24" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: "loaderPulse 2s ease-in-out infinite" }}>
           <rect width="210" height="210" rx="105" fill="white"/>
           <path d="M59 113.144C59 111.777 59.5924 110.387 60.7773 108.974L120.387 34.736C121.891 32.8675 123.508 31.9561 125.24 32.0016C126.972 32.0472 128.316 32.7764 129.273 34.1891C130.276 35.5563 130.322 37.402 129.41 39.7262L109.928 92.4313H146.979C148.391 92.4313 149.531 92.8643 150.396 93.7301C151.308 94.596 151.764 95.667 151.764 96.943C151.764 98.3102 151.194 99.723 150.055 101.181L90.4453 175.351C88.9414 177.22 87.3008 178.131 85.5234 178.086C83.7917 178.086 82.4473 177.379 81.4902 175.966C80.5332 174.554 80.4876 172.685 81.3535 170.361L100.904 117.656H63.8535C62.4408 117.656 61.2786 117.223 60.3672 116.357C59.4557 115.491 59 114.42 59 113.144Z" fill="black"/>
@@ -3408,7 +3408,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
     <ToastProvider>
     <ConfirmProvider>
     <AnimationStyles />
-    <div style={{ display: "flex", height: "100vh", background: "#0A0A0C", color: "#EDEDF0", fontFamily: "var(--font-inter), 'Inter', -apple-system, sans-serif", fontSize: 13 }}>
+    <div style={{ display: "flex", height: "100dvh", background: "#0A0A0C", color: "#EDEDF0", fontFamily: "var(--font-inter), 'Inter', -apple-system, sans-serif", fontSize: 13 }}>
       {/* Mobile Sidebar Backdrop */}
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 998, animation: "fadeIn 150ms ease" }} />
@@ -3457,7 +3457,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "32px 40px", ...(isMobile ? { paddingTop: 60 } : {}) }}>
+      <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "32px 40px", ...(isMobile ? { paddingTop: 60, paddingBottom: 40 } : {}) }}>
         {/* Mobile Top Bar */}
         {isMobile && (
           <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 52, background: "#0A0A0C", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 1000 }}>

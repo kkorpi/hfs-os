@@ -6,10 +6,11 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Public routes
+  const isDemo = req.nextUrl.searchParams.has("demo");
   const publicPaths = ["/login", "/invoice/", "/api/auth/"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
-  if (isPublicPath) {
+  if (isPublicPath || isDemo) {
     return NextResponse.next();
   }
 
