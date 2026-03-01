@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { getInvoiceByToken, recordInvoiceView, getSettingsPublic } from "@/lib/actions";
 import { notFound } from "next/navigation";
+import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,13 @@ export default async function PublicInvoicePage({ params, searchParams }: { para
   return (
     <>
       <style>{`
+        @media print {
+          @page { margin: 0.5in; size: letter; }
+          html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .no-print { display: none !important; }
+          .inv-wrapper { padding: 0 !important; min-height: auto !important; background: white !important; }
+          .inv-card { box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+        }
         @media (max-width: 768px) {
           .inv-wrapper { padding: 16px 8px !important; }
           .inv-card { padding: 24px 20px !important; }
@@ -162,6 +170,7 @@ export default async function PublicInvoicePage({ params, searchParams }: { para
             <a href="https://holdfast.studio" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#bbb", letterSpacing: "0.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, textDecoration: "none" }}>{settings.companyName}<img src="/bolt-icon@2x.png" alt="" width={10} height={10} style={{ opacity: 0.5 }} />{settings.location}</a>
           </div>
         </div>
+        <PrintButton />
       </div>
     </>
   );

@@ -2077,6 +2077,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
               <Send size={12} /> Send
             </button>
             <a className="act" href={`/invoice/${invoice.viewToken}?preview`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><Eye size={12} /> Preview</a>
+            <a className="act" href={`/invoice/${invoice.viewToken}?preview&print`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
             <ActionMenu items={[
               { icon: <Check size={13} />, label: "Mark Paid", onClick: () => setShowPaidModal(true) },
@@ -2094,6 +2095,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                 persist();
                 onMarkPaid(invoice.id, null);
               }}><X size={12} /> Mark Unpaid</button>
+            <a className="act" href={`/invoice/${invoice.viewToken}?print`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
           </>) : (<>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => setShowReminderModal(true)}>
@@ -2104,6 +2106,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
             <ActionMenu items={[
               { icon: <Send size={13} />, label: "Resend", onClick: () => setShowSendModal(true) },
               { icon: <Eye size={13} />, label: "Preview", onClick: () => window.open(`/invoice/${invoice.viewToken}?preview`, "_blank") },
+              { icon: <FileText size={13} />, label: "Download PDF", onClick: () => window.open(`/invoice/${invoice.viewToken}?print`, "_blank") },
               { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(invoice) },
               { icon: <Copy size={13} />, label: "Copy Link", onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/invoice/${invoice.viewToken}`); _toastFn("Link copied", "info"); } },
             ]} />
