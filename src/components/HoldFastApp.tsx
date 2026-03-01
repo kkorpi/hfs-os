@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Send, Plus, X, Eye, Check, Copy, ArrowLeft, MoreHorizontal, Pencil, Trash2, CopyPlus, Settings, LogOut, Archive, PlayCircle, CheckCircle, Calendar, Repeat, LayoutDashboard, Users, FolderKanban, FileText, Receipt, TrendingUp, UserPlus, Flame, Snowflake, ThermometerSun, Menu } from "lucide-react";
 import {
   getAllData,
   createClient as dbCreateClient,
@@ -488,42 +488,43 @@ function Field({ label, children }) {
   );
 }
 
-function PageHeader({ title, backLabel, onBack, actions }) {
+function PageHeader({ title, backLabel, onBack, actions, isMobile }: any) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+    <div style={{ marginBottom: isMobile ? 20 : 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, minWidth: 0 }}>
           {onBack && (
-            <button onClick={onBack} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6, marginRight: 8, fontSize: 15 }}>
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#5E5E6E", cursor: "pointer", fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6, marginRight: 8, fontSize: isMobile ? 13 : 15, flexShrink: 0 }}>
               <ArrowLeft size={16} color="#5E5E6E" />
-              <span>{backLabel || "Back"}</span>
-              {title && <span style={{ color: "#2A2A30", margin: "0 2px" }}>/</span>}
+              {!isMobile && <span>{backLabel || "Back"}</span>}
+              {!isMobile && title && <span style={{ color: "#2A2A30", margin: "0 2px" }}>/</span>}
             </button>
           )}
-          <h1 style={{ fontSize: onBack ? 15 : 22, fontWeight: 600, margin: 0, color: "#EDEDF0" }}>{title}</h1>
+          <h1 style={{ fontSize: isMobile ? 18 : (onBack ? 15 : 22), fontWeight: 600, margin: 0, color: "#EDEDF0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</h1>
         </div>
-        {actions && <div style={{ display: "flex", gap: 8 }}>{actions}</div>}
+        {actions && <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</div>}
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, sub, warn }) {
+function StatCard({ label, value, sub, warn, isMobile }: any) {
   return (
-    <div style={{ padding: "20px 24px", background: warn ? "rgba(239,68,68,0.08)" : "#141416", borderRadius: 10, border: `1px solid ${warn ? "rgba(239,68,68,0.12)" : "#1C1C20"}` }}>
-      <div style={{ fontSize: 11, color: "#5E5E6E", letterSpacing: "0.5px", fontWeight: 500, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 600, color: warn ? "#F87171" : "#EDEDF0", fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace" }}>{value}</div>
+    <div style={{ padding: isMobile ? "14px 16px" : "20px 24px", background: warn ? "rgba(239,68,68,0.08)" : "#141416", borderRadius: 10, border: `1px solid ${warn ? "rgba(239,68,68,0.12)" : "#1C1C20"}` }}>
+      <div style={{ fontSize: 11, color: "#5E5E6E", letterSpacing: "0.5px", fontWeight: 500, marginBottom: isMobile ? 4 : 8 }}>{label}</div>
+      <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: warn ? "#F87171" : "#EDEDF0", fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace" }}>{value}</div>
       <div style={{ fontSize: 11, color: "#3E3E4A", marginTop: 4 }}>{sub}</div>
     </div>
   );
 }
 
 function Modal({ title, onClose, children, width = 560 }) {
+  const isMobileModal = typeof window !== "undefined" && window.innerWidth <= 768;
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", animation: "fadeIn 150ms ease" }} onClick={onClose}>
-      <div style={{ background: "#141416", border: "1px solid #1C1C20", borderRadius: "12px", width: `min(${width}px, 95vw)`, maxHeight: "90vh", overflow: "auto", padding: "32px", boxShadow: "0 24px 48px rgba(0,0,0,0.4)", animation: "modalIn 150ms ease" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#EDEDF0" }}>{title}</h2>
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: isMobileModal ? "flex-end" : "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", animation: "fadeIn 150ms ease" }} onClick={onClose}>
+      <div style={{ background: "#141416", border: "1px solid #1C1C20", borderRadius: isMobileModal ? "16px 16px 0 0" : "12px", width: isMobileModal ? "100%" : `min(${width}px, 95vw)`, maxHeight: isMobileModal ? "85vh" : "90vh", overflow: "auto", padding: isMobileModal ? "24px 20px" : "32px", boxShadow: "0 24px 48px rgba(0,0,0,0.4)", animation: "modalIn 150ms ease" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobileModal ? 16 : 24 }}>
+          <h2 style={{ margin: 0, fontSize: isMobileModal ? 16 : 18, fontWeight: 600, color: "#EDEDF0" }}>{title}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#5E5E6E", fontSize: 20, cursor: "pointer", padding: "4px 8px" }}>✕</button>
         </div>
         {children}
@@ -973,7 +974,7 @@ function DueDatePicker({ issueDate, value, onChange, onBlur, style: overrideStyl
 // ============================================================
 // PAGE: DASHBOARD
 // ============================================================
-function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTimePeriodChange }) {
+function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTimePeriodChange, isMobile }) {
   const today = todayStr();
   const thisMonth = new Date().getMonth();
   const thisYear = new Date().getFullYear();
@@ -991,18 +992,18 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
 
   return (
     <div>
-      <PageHeader title="Dashboard" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />New Invoice</button>} />
+      <PageHeader title="Dashboard" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />{isMobile ? "Invoice" : "New Invoice"}</button>} isMobile={isMobile} />
 
       {/* Time Period + Stat Cards */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
         <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32 }}>
-        <StatCard label="This Month" value={formatCurrency(thisMonthRevenue)} sub={new Date().toLocaleString("en", { month: "long", year: "numeric" })} />
-        <StatCard label="Revenue" value={formatCurrency(periodRevenue)} sub={periodLabel} />
-        <StatCard label="Outstanding" value={formatCurrency(outstandingTotal)} sub={`${outstandingInvoices.length} invoice${outstandingInvoices.length !== 1 ? "s" : ""}`} warn={outstandingTotal > 0} />
-        <StatCard label="Overdue" value={String(overdueInvoices.length)} sub={overdueInvoices.length > 0 ? formatCurrency(overdueInvoices.reduce((s, i) => s + i.total, 0)) : "All clear"} warn={overdueInvoices.length > 0} />
-        <StatCard label="Expenses" value={formatCurrency(periodExpenses)} sub={periodLabel} />
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(5, 1fr)", gap: isMobile ? 8 : 16, marginBottom: isMobile ? 20 : 32 }}>
+        <StatCard label="This Month" value={formatCurrency(thisMonthRevenue)} sub={new Date().toLocaleString("en", { month: "long", year: "numeric" })} isMobile={isMobile} />
+        <StatCard label="Revenue" value={formatCurrency(periodRevenue)} sub={periodLabel} isMobile={isMobile} />
+        <StatCard label="Outstanding" value={formatCurrency(outstandingTotal)} sub={`${outstandingInvoices.length} invoice${outstandingInvoices.length !== 1 ? "s" : ""}`} warn={outstandingTotal > 0} isMobile={isMobile} />
+        <StatCard label="Overdue" value={String(overdueInvoices.length)} sub={overdueInvoices.length > 0 ? formatCurrency(overdueInvoices.reduce((s, i) => s + i.total, 0)) : "All clear"} warn={overdueInvoices.length > 0} isMobile={isMobile} />
+        <StatCard label="Expenses" value={formatCurrency(periodExpenses)} sub={periodLabel} isMobile={isMobile} />
       </div>
 
       {/* Overdue Alerts */}
@@ -1010,12 +1011,12 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
         <div style={{ marginBottom: 24, padding: "16px 20px", background: "rgba(239,68,68,0.06)", borderRadius: 8, border: "1px solid #2a1a1a" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#F87171", marginBottom: 8 }}>Overdue Invoices</div>
           {overdueInvoices.map((inv) => (
-            <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid #221818", cursor: "pointer" }}>
+            <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })} style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", padding: "8px 0", borderTop: "1px solid #221818", cursor: "pointer", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 0 }}>
               <div>
                 <span style={{ color: "#EDEDF0", fontSize: 13, fontFamily: mono }}>{inv.number}</span>
                 <span style={{ color: "#5E5E6E", fontSize: 13, marginLeft: 12 }}>{getClientName(inv.clientId)}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 16 }}>
                 <span style={{ color: "#F87171", fontSize: 12 }}>{Math.abs(daysBetween(inv.dueDate, today))} days overdue</span>
                 <span style={{ color: "#EDEDF0", fontWeight: 500, fontFamily: mono }}>{formatCurrency(inv.total)}</span>
               </div>
@@ -1031,15 +1032,26 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
           <button style={{ ...btnSecondary, fontSize: 12, padding: "6px 14px" }} onClick={() => navigate({ page: "invoices" })}>View All</button>
         </div>
         <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
-          {invoices.sort((a, b) => (b.issueDate > a.issueDate ? 1 : -1)).slice(0, 8).map((inv, idx) => (
-            <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })} style={{ display: "grid", gridTemplateColumns: "100px 1fr 140px 100px 100px", gap: 16, alignItems: "center", padding: "14px 20px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#141416")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
-              <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
-              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
-              <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(inv.total)}</span>
-              <span><StatusBadge status={inv.status} /></span>
+          {invoices.sort((a, b) => (b.issueDate > a.issueDate ? 1 : -1)).slice(0, isMobile ? 5 : 8).map((inv, idx) => (
+            <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })} style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "100px 1fr 140px 100px 100px", gap: 16, alignItems: "center", padding: "14px 20px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}
+              onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.background = "#141416"; }}
+              onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.background = "transparent"; }}>
+              {isMobile ? (<>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
+                  <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0" }}>{formatCurrency(inv.total)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontFamily: mono, fontSize: 11, color: "#5E5E6E" }}>{inv.number} · {formatDate(inv.issueDate)}</span>
+                  <StatusBadge status={inv.status} />
+                </div>
+              </>) : (<>
+                <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
+                <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
+                <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
+                <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(inv.total)}</span>
+                <span><StatusBadge status={inv.status} /></span>
+              </>)}
             </div>
           ))}
         </div>
@@ -1053,14 +1065,25 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
         </div>
         <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
           {expenses.sort((a, b) => (b.date > a.date ? 1 : -1)).slice(0, 5).map((exp, idx) => (
-            <div key={exp.id} onClick={() => navigate({ page: "expenses", sub: "edit", id: exp.id })} style={{ display: "grid", gridTemplateColumns: "100px 1fr 140px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#141416")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(exp.date)}</span>
-              <span style={{ color: "#EDEDF0", fontSize: 13 }}>{exp.vendor}</span>
-              <span style={{ fontSize: 12, color: "#5E5E6E", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</span>
-              <span style={{ fontSize: 11, color: "#5E5E6E", textTransform: "capitalize" }}>{exp.category}</span>
-              <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(exp.amount)}</span>
+            <div key={exp.id} onClick={() => navigate({ page: "expenses", sub: "edit", id: exp.id })} style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "100px 1fr 140px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}
+              onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.background = "#141416"; }}
+              onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.background = "transparent"; }}>
+              {isMobile ? (<>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ color: "#EDEDF0", fontSize: 13 }}>{exp.vendor}</span>
+                  <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0" }}>{formatCurrency(exp.amount)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#5E5E6E" }}>{formatDate(exp.date)}</span>
+                  <span style={{ fontSize: 11, color: "#5E5E6E", textTransform: "capitalize" }}>{exp.category}</span>
+                </div>
+              </>) : (<>
+                <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(exp.date)}</span>
+                <span style={{ color: "#EDEDF0", fontSize: 13 }}>{exp.vendor}</span>
+                <span style={{ fontSize: 12, color: "#5E5E6E", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</span>
+                <span style={{ fontSize: 11, color: "#5E5E6E", textTransform: "capitalize" }}>{exp.category}</span>
+                <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(exp.amount)}</span>
+              </>)}
             </div>
           ))}
         </div>
@@ -1072,14 +1095,14 @@ function DashboardPage({ invoices, clients, expenses, navigate, timePeriod, onTi
 // ============================================================
 // PAGE: CLIENTS
 // ============================================================
-function ClientsListPage({ clients, projects, invoices, navigate, onSave, onDelete, timePeriod, onTimePeriodChange }) {
+function ClientsListPage({ clients, projects, invoices, navigate, onSave, onDelete, timePeriod, onTimePeriodChange, isMobile }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const lastClientInvoice = (clientId: string) => invoices.filter((i) => i.clientId === clientId).reduce((max, i) => i.issueDate > max ? i.issueDate : max, "");
   const filteredClients = clients.filter((c) => statusFilter === "all" || c.status === statusFilter).sort((a, b) => (a.status === "active" ? 0 : 1) - (b.status === "active" ? 0 : 1) || (lastClientInvoice(b.id) || b.createdAt || "").localeCompare(lastClientInvoice(a.id) || a.createdAt || ""));
 
   return (
     <div>
-      <PageHeader title="Clients" actions={<button style={btnPrimary} onClick={() => navigate({ page: "clients", sub: "new" })}><Plus size={14} />New Client</button>} />
+      <PageHeader title="Clients" actions={<button style={btnPrimary} onClick={() => navigate({ page: "clients", sub: "new" })}><Plus size={14} />{isMobile ? "Client" : "New Client"}</button>} isMobile={isMobile} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, ...ALL_CLIENT_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={Object.fromEntries([["all", clients.length], ...ALL_CLIENT_STATUSES.map((s) => [s, clients.filter((c) => c.status === s).length])])} />
       </div>
@@ -1110,7 +1133,7 @@ function ClientsListPage({ clients, projects, invoices, navigate, onSave, onDele
                   ]} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 16, paddingTop: 16, borderTop: "1px solid #1C1C20" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 16, marginTop: isMobile ? 12 : 16, paddingTop: isMobile ? 12 : 16, borderTop: "1px solid #1C1C20" }}>
                 <div><div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px" }}>PROJECTS</div><div style={{ fontSize: 14, fontWeight: 500, color: "#7B7B88" }}>{clientProjects.filter((p) => p.status === "active").length} active</div></div>
                 <div><div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px" }}>INVOICES</div><div style={{ fontSize: 14, fontWeight: 500, color: "#7B7B88" }}>{clientInvoices.length}</div></div>
                 <div><div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px" }}>REVENUE</div><div style={{ fontSize: 14, fontWeight: 500, color: "#4ADE80", fontFamily: mono }}>{formatCurrency(clientRevenue)}</div></div>
@@ -1124,7 +1147,7 @@ function ClientsListPage({ clients, projects, invoices, navigate, onSave, onDele
   );
 }
 
-function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDelete, onSaveProject, onDeleteProject, navigate }) {
+function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDelete, onSaveProject, onDeleteProject, navigate, isMobile }) {
   const client = clients.find((c) => c.id === clientId);
   const [form, setForm] = useState(client || {});
   const [editing, setEditing] = useState(!client);
@@ -1142,7 +1165,7 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
 
   return (
     <div>
-      <PageHeader title={editing ? (clientId === "new" ? "New Client" : "Edit Client") : form.name} backLabel="Clients" onBack={() => navigate({ page: "clients" })}
+      <PageHeader title={editing ? (clientId === "new" ? "New Client" : "Edit Client") : form.name} backLabel="Clients" onBack={() => navigate({ page: "clients" })} isMobile={isMobile}
         actions={!editing ? (
           <>
             <button style={btnSecondary} onClick={() => setEditing(true)}>Edit</button>
@@ -1153,11 +1176,11 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
       {editing ? (
         <div style={{ maxWidth: 600 }}>
           <Field label="Company / Client Name"><input style={inputStyle} value={form.name || ""} onChange={(e) => upd("name", e.target.value)} /></Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Primary Contact"><input style={inputStyle} value={form.contact || ""} onChange={(e) => upd("contact", e.target.value)} /></Field>
             <Field label="Email"><input style={inputStyle} type="email" value={form.email || ""} onChange={(e) => upd("email", e.target.value)} /></Field>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Phone"><input style={inputStyle} value={form.phone || ""} onChange={(e) => upd("phone", e.target.value)} /></Field>
             <Field label="Status"><Select value={form.status || "active"} onChange={(v) => upd("status", v)} options={[{ value: "active", label: "Active" }, { value: "archived", label: "Archived" }]} /></Field>
           </div>
@@ -1167,7 +1190,7 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
           <div style={{ marginTop: 8, marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: "#7B7B88", marginBottom: 8, letterSpacing: "0.3px" }}>ADDITIONAL CONTACTS</div>
             {(form.additionalContacts || []).map((ac, idx) => (
-              <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 28px", gap: 8, marginBottom: 6 }}>
+              <div key={idx} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 28px" : "1fr 1fr 120px 28px", gap: 8, marginBottom: 6 }}>
                 <input style={inputStyle} placeholder="Name" value={ac.name || ""} onChange={(e) => { const updated = [...(form.additionalContacts || [])]; updated[idx] = { ...updated[idx], name: e.target.value }; upd("additionalContacts", updated); }} />
                 <input style={inputStyle} placeholder="Email" type="email" value={ac.email || ""} onChange={(e) => { const updated = [...(form.additionalContacts || [])]; updated[idx] = { ...updated[idx], email: e.target.value }; upd("additionalContacts", updated); }} />
                 <input style={inputStyle} placeholder="Role" value={ac.role || ""} onChange={(e) => { const updated = [...(form.additionalContacts || [])]; updated[idx] = { ...updated[idx], role: e.target.value }; upd("additionalContacts", updated); }} />
@@ -1186,7 +1209,7 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
       ) : (
         <div>
           {/* Client Info */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, marginBottom: 32, padding: 24, background: "#141416", borderRadius: 10, border: "1px solid #1C1C20" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 16 : 24, marginBottom: 32, padding: isMobile ? 16 : 24, background: "#141416", borderRadius: 10, border: "1px solid #1C1C20" }}>
             <div>
               <div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px", marginBottom: 4 }}>CONTACTS</div>
               <div style={{ color: "#EDEDF0", fontSize: 14 }}>{client.contact || "—"}</div>
@@ -1217,22 +1240,34 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
                 ? [{ icon: <CheckCircle size={13} />, label: "Mark Completed", onClick: () => onSaveProject({ ...p, status: "completed" }) }]
                 : [{ icon: <PlayCircle size={13} />, label: "Reactivate", onClick: () => onSaveProject({ ...p, status: "active" }) }];
               return (
-                <div key={p.id} onClick={() => navigate({ page: "projects", sub: "edit", id: p.id })} style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto auto", gap: 16, alignItems: "center", padding: "12px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
+                <div key={p.id} onClick={() => navigate({ page: "projects", sub: "edit", id: p.id })}
+                  style={isMobile ? { padding: "12px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" } : { display: "grid", gridTemplateColumns: "1fr auto auto auto auto", gap: 16, alignItems: "center", padding: "12px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#2A2A30")}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1C1C20")}>
-                  <div>
-                    <span style={{ color: "#EDEDF0", fontSize: 14 }}>{p.name}</span>
-                    {p.description && <span style={{ color: "#5E5E6E", fontSize: 12, marginLeft: 12 }}>{p.description}</span>}
-                  </div>
-                  <span style={{ fontSize: 12, color: "#5E5E6E" }}>{projInvCount > 0 ? `${projInvCount} invoice${projInvCount !== 1 ? "s" : ""}` : "No invoices"}</span>
-                  <span style={{ fontFamily: mono, color: projRevenue > 0 ? "#4ADE80" : "#3E3E4A", fontSize: 13 }}>{projRevenue > 0 ? formatCurrency(projRevenue) : "—"}</span>
-                  <StatusChip status={p.status} />
-                  <ActionMenu items={[
+                  {isMobile ? (<>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ color: "#EDEDF0", fontSize: 14 }}>{p.name}</span>
+                      <StatusChip status={p.status} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "#5E5E6E" }}>{projInvCount > 0 ? `${projInvCount} invoice${projInvCount !== 1 ? "s" : ""}` : "No invoices"}</span>
+                      <span style={{ fontFamily: mono, color: projRevenue > 0 ? "#4ADE80" : "#3E3E4A", fontSize: 13 }}>{projRevenue > 0 ? formatCurrency(projRevenue) : "—"}</span>
+                    </div>
+                  </>) : (<>
+                    <div>
+                      <span style={{ color: "#EDEDF0", fontSize: 14 }}>{p.name}</span>
+                      {p.description && <span style={{ color: "#5E5E6E", fontSize: 12, marginLeft: 12 }}>{p.description}</span>}
+                    </div>
+                    <span style={{ fontSize: 12, color: "#5E5E6E" }}>{projInvCount > 0 ? `${projInvCount} invoice${projInvCount !== 1 ? "s" : ""}` : "No invoices"}</span>
+                    <span style={{ fontFamily: mono, color: projRevenue > 0 ? "#4ADE80" : "#3E3E4A", fontSize: 13 }}>{projRevenue > 0 ? formatCurrency(projRevenue) : "—"}</span>
+                    <StatusChip status={p.status} />
+                  </>)}
+                  {!isMobile && <ActionMenu items={[
                     { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "projects", sub: "edit", id: p.id }) },
                     ...statusActions,
                     { divider: true, icon: null, label: "", onClick: () => {} },
                     { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: `Delete "${p.name}"?`, confirmLabel: "Delete", danger: true })) onDeleteProject(p.id); }, danger: true },
-                  ]} />
+                  ]} />}
                 </div>
               );
             })}
@@ -1242,11 +1277,23 @@ function ClientDetailPage({ clientId, clients, projects, invoices, onSave, onDel
           <h2 style={{ fontSize: 15, fontWeight: 500, color: "#7B7B88", marginBottom: 12 }}>Invoices ({clientInvoices.length})</h2>
           <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
             {clientInvoices.sort((a, b) => (b.issueDate > a.issueDate ? 1 : -1)).map((inv, idx) => (
-              <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })} style={{ display: "grid", gridTemplateColumns: "120px 140px 120px 80px", gap: 16, alignItems: "center", padding: "12px 16px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}>
-                <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
-                <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
-                <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(inv.total)}</span>
-                <span style={{ textAlign: "right" }}><StatusBadge status={inv.status} /></span>
+              <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })}
+                style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) } : { display: "grid", gridTemplateColumns: "120px 140px 120px 80px", gap: 16, alignItems: "center", padding: "12px 16px", background: "transparent", cursor: "pointer", borderBottom: "1px solid #1C1C20", transition: "background 120ms ease", ...(idx === 0 ? { borderRadius: "8px 8px 0 0" } : {}) }}>
+                {isMobile ? (<>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
+                    <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(inv.total)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
+                    <StatusBadge status={inv.status} />
+                  </div>
+                </>) : (<>
+                  <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
+                  <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
+                  <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(inv.total)}</span>
+                  <span style={{ textAlign: "right" }}><StatusBadge status={inv.status} /></span>
+                </>)}
               </div>
             ))}
           </div>
@@ -1269,7 +1316,7 @@ const PROSPECT_STATUS_COLORS = {
   deferred: { bg: "#1A1A1E", text: "#5E5E6E", border: "#2A2A30" },
 };
 
-function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate }) {
+function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate, isMobile }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const activeStatuses = ["lead", "intro", "proposal", "negotiation"];
   const filtered = statusFilter === "all" ? prospects
@@ -1298,43 +1345,59 @@ function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate })
 
   return (
     <div>
-      <PageHeader title="Prospects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "prospects", sub: "new" })}>+ New Prospect</button>} />
+      <PageHeader title="Prospects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "prospects", sub: "new" })}>+ New Prospect</button>} isMobile={isMobile} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={statusOptions} counts={statusCounts} />
       </div>
       <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 140px 120px 100px 100px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
-          {["COMPANY", "OPPORTUNITY", "DEAL SIZE", "STATUS", "LAST CONTACT", "NEXT ACTION", ""].map((h) => (
-            <span key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>{h}</span>
-          ))}
-        </div>
+        {!isMobile && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 140px 120px 100px 100px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
+            {["COMPANY", "OPPORTUNITY", "DEAL SIZE", "STATUS", "LAST CONTACT", "NEXT ACTION", ""].map((h) => (
+              <span key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>{h}</span>
+            ))}
+          </div>
+        )}
         {sorted.length === 0 && <div style={{ padding: 20, color: "#3E3E4A", fontSize: 13, textAlign: "center" }}>No prospects yet</div>}
         {sorted.map((p, idx) => {
           const sc = PROSPECT_STATUS_COLORS[p.status] || PROSPECT_STATUS_COLORS.lead;
           const isOverdue = p.nextAction && p.nextAction < todayStr();
           return (
             <div key={p.id} onClick={() => navigate({ page: "prospects", sub: "edit", id: p.id })}
-              style={{ display: "grid", gridTemplateColumns: "1fr 160px 140px 120px 100px 100px 36px", gap: 12, alignItems: "center", padding: "14px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#141416")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {tempIcon(p.temperature)}
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{p.company || "Untitled"}</span>
+              style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "1fr 160px 140px 120px 100px 100px 36px", gap: 12, alignItems: "center", padding: "14px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
+              onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.background = "#141416"; }}
+              onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.background = "transparent"; }}>
+              {isMobile ? (<>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {tempIcon(p.temperature)}
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{p.company || "Untitled"}</span>
+                  </div>
+                  <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.status}</span>
                 </div>
-                <div style={{ fontSize: 11, color: "#5E5E6E", marginTop: 2 }}>{p.contact}</div>
-              </div>
-              <span style={{ fontSize: 12, color: "#7B7B88" }}>{p.opportunity}</span>
-              <span style={{ fontSize: 12, color: "#7B7B88", fontFamily: "var(--font-mono), monospace" }}>{p.dealSize || "—"}</span>
-              <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.status}</span>
-              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{p.lastContact ? formatDate(p.lastContact) : "—"}</span>
-              <span style={{ fontSize: 12, color: isOverdue ? "#F87171" : "#7B7B88", fontWeight: isOverdue ? 600 : 400 }}>{p.nextAction ? formatDate(p.nextAction) : "—"}</span>
-              <ActionMenu items={[
-                { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "prospects", sub: "edit", id: p.id }) },
-                ...(p.status !== "won" ? [{ icon: <UserPlus size={13} />, label: "Convert to Client", onClick: async () => { if (await _confirmFn({ title: `Convert "${p.company}" to a client?`, confirmLabel: "Convert" })) onConvert(p); } }] : []),
-                { divider: true, icon: null, label: "", onClick: () => {} },
-                { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: "Delete this prospect?", confirmLabel: "Delete", danger: true })) onDelete(p.id); }, danger: true },
-              ]} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#5E5E6E" }}>{p.opportunity}{p.dealSize ? ` · ${p.dealSize}` : ""}</span>
+                  {p.nextAction && <span style={{ fontSize: 11, color: isOverdue ? "#F87171" : "#7B7B88" }}>{formatDate(p.nextAction)}</span>}
+                </div>
+              </>) : (<>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {tempIcon(p.temperature)}
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "#EDEDF0" }}>{p.company || "Untitled"}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#5E5E6E", marginTop: 2 }}>{p.contact}</div>
+                </div>
+                <span style={{ fontSize: 12, color: "#7B7B88" }}>{p.opportunity}</span>
+                <span style={{ fontSize: 12, color: "#7B7B88", fontFamily: "var(--font-mono), monospace" }}>{p.dealSize || "—"}</span>
+                <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 500, background: sc.bg, color: sc.text, textTransform: "capitalize", whiteSpace: "nowrap" }}>{p.status}</span>
+                <span style={{ fontSize: 12, color: "#5E5E6E" }}>{p.lastContact ? formatDate(p.lastContact) : "—"}</span>
+                <span style={{ fontSize: 12, color: isOverdue ? "#F87171" : "#7B7B88", fontWeight: isOverdue ? 600 : 400 }}>{p.nextAction ? formatDate(p.nextAction) : "—"}</span>
+                <ActionMenu items={[
+                  { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "prospects", sub: "edit", id: p.id }) },
+                  ...(p.status !== "won" ? [{ icon: <UserPlus size={13} />, label: "Convert to Client", onClick: async () => { if (await _confirmFn({ title: `Convert "${p.company}" to a client?`, confirmLabel: "Convert" })) onConvert(p); } }] : []),
+                  { divider: true, icon: null, label: "", onClick: () => {} },
+                  { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: "Delete this prospect?", confirmLabel: "Delete", danger: true })) onDelete(p.id); }, danger: true },
+                ]} />
+              </>)}
             </div>
           );
         })}
@@ -1343,29 +1406,29 @@ function ProspectsListPage({ prospects, onSave, onDelete, onConvert, navigate })
   );
 }
 
-function ProspectEditPage({ prospectId, prospects, onSave, onDelete, onConvert, navigate }) {
+function ProspectEditPage({ prospectId, prospects, onSave, onDelete, onConvert, navigate, isMobile }) {
   const prospect = prospects.find((p) => p.id === prospectId);
   const [form, setForm] = useState(prospect || { company: "", contact: "", email: "", opportunity: "", status: "lead", dealSize: "", source: "", temperature: "warm", lastContact: todayStr(), nextAction: "", notes: "" });
   const upd = (k, v) => setForm({ ...form, [k]: v });
   return (
     <div>
-      <PageHeader title={prospect ? `Edit: ${form.company || "Prospect"}` : "New Prospect"} backLabel="Prospects" onBack={() => navigate({ page: "prospects" })} />
+      <PageHeader title={prospect ? `Edit: ${form.company || "Prospect"}` : "New Prospect"} backLabel="Prospects" onBack={() => navigate({ page: "prospects" })} isMobile={isMobile} />
       <div style={{ maxWidth: 600 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <Field label="Company"><input style={inputStyle} value={form.company} onChange={(e) => upd("company", e.target.value)} placeholder="Company name" /></Field>
           <Field label="Contact Name"><input style={inputStyle} value={form.contact} onChange={(e) => upd("contact", e.target.value)} placeholder="Name(s)" /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <Field label="Email"><input style={inputStyle} type="email" value={form.email} onChange={(e) => upd("email", e.target.value)} placeholder="email@company.com" /></Field>
           <Field label="Opportunity / Role"><input style={inputStyle} value={form.opportunity} onChange={(e) => upd("opportunity", e.target.value)} placeholder="e.g. Fractional designer" /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
           <Field label="Status"><Select value={form.status} onChange={(v) => upd("status", v)} options={ALL_PROSPECT_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))} /></Field>
           <Field label="Temperature"><Select value={form.temperature} onChange={(v) => upd("temperature", v)} options={[{ value: "hot", label: "Hot" }, { value: "warm", label: "Warm" }, { value: "cold", label: "Cold" }]} /></Field>
           <Field label="Source"><Select value={form.source} onChange={(v) => upd("source", v)} options={PROSPECT_SOURCES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))} /></Field>
         </div>
         <Field label="Potential Deal Size"><input style={inputStyle} value={form.dealSize} onChange={(e) => upd("dealSize", e.target.value)} placeholder="e.g. 20k/mo ($60k)" /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <Field label="Last Contact"><DatePicker value={form.lastContact} onChange={(v) => upd("lastContact", v)} /></Field>
           <Field label="Next Action Date"><DatePicker value={form.nextAction} onChange={(v) => upd("nextAction", v)} /></Field>
         </div>
@@ -1391,7 +1454,7 @@ function ProspectEditPage({ prospectId, prospects, onSave, onDelete, onConvert, 
 // ============================================================
 // PAGE: PROJECTS
 // ============================================================
-function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDelete, timePeriod, onTimePeriodChange }) {
+function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDelete, timePeriod, onTimePeriodChange, isMobile }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const timeFilteredInvoices = filterByTimePeriod(invoices, "issueDate", timePeriod);
   const activeProjectIds = new Set(timeFilteredInvoices.map((i) => i.projectId).filter(Boolean));
@@ -1407,7 +1470,7 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
 
   return (
     <div>
-      <PageHeader title="Projects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "projects", sub: "new" })}><Plus size={14} />New Project</button>} />
+      <PageHeader title="Projects" actions={<button style={btnPrimary} onClick={() => navigate({ page: "projects", sub: "new" })}><Plus size={14} />{isMobile ? "Project" : "New Project"}</button>} isMobile={isMobile} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
         <StatusDropdown value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, ...ALL_PROJECT_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={Object.fromEntries([["all", timeFiltered.length], ...ALL_PROJECT_STATUSES.map((s) => [s, timeFiltered.filter((p) => p.status === s).length])])} />
         <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
@@ -1421,24 +1484,39 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
             ? [{ icon: <CheckCircle size={13} />, label: "Mark Completed", onClick: () => onSave({ ...proj, status: "completed" }) }]
             : [{ icon: <PlayCircle size={13} />, label: "Reactivate", onClick: () => onSave({ ...proj, status: "active" }) }];
           return (
-            <div key={proj.id} onClick={() => navigate({ page: "projects", sub: "edit", id: proj.id })} style={{ display: "grid", gridTemplateColumns: "1fr 160px 140px 120px auto 36px", gap: 16, alignItems: "center", padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
+            <div key={proj.id} onClick={() => navigate({ page: "projects", sub: "edit", id: proj.id })}
+              style={isMobile ? { padding: "14px 16px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" } : { display: "grid", gridTemplateColumns: "1fr 160px 140px 120px auto 36px", gap: 16, alignItems: "center", padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", cursor: "pointer" }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#2A2A30")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1C1C20")}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#EDEDF0" }}>{proj.name}</div>
-                <div style={{ fontSize: 12, color: "#5E5E6E" }}>{clientName}</div>
-              </div>
-              <div style={{ fontSize: 12, color: "#5E5E6E" }}>{proj.description?.substring(0, 40)}</div>
-              <div style={{ fontSize: 13, color: "#7B7B88", fontFamily: mono }}>{proj.rate ? `${formatCurrency(proj.rate)}/${proj.rateType === "monthly" ? "mo" : proj.rateType === "hourly" ? "hr" : "fixed"}` : "—"}</div>
-              <div><div style={{ fontSize: 13, color: "#4ADE80", fontFamily: mono }}>{formatCurrency(projRevenue)}</div>{projInvoices.length > 0 && <div style={{ fontSize: 11, color: "#3E3E4A" }}>{projInvoices.length} invoice{projInvoices.length !== 1 ? "s" : ""}</div>}</div>
-              <StatusChip status={proj.status} />
-              <ActionMenu items={[
-                { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "projects", sub: "edit", id: proj.id }) },
-                ...(proj.clientId ? [{ icon: <Users size={13} />, label: "View Client", onClick: () => navigate({ page: "clients", sub: "detail", id: proj.clientId }) }] : []),
-                ...statusActions,
-                { divider: true, icon: null, label: "", onClick: () => {} },
-                { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: `Delete "${proj.name}"?`, confirmLabel: "Delete", danger: true })) onDelete(proj.id); }, danger: true },
-              ]} />
+              {isMobile ? (<>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: "#EDEDF0" }}>{proj.name}</div>
+                    <div style={{ fontSize: 12, color: "#5E5E6E" }}>{clientName}</div>
+                  </div>
+                  <StatusChip status={proj.status} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#7B7B88", fontFamily: mono }}>{proj.rate ? `${formatCurrency(proj.rate)}/${proj.rateType === "monthly" ? "mo" : proj.rateType === "hourly" ? "hr" : "fixed"}` : ""}</span>
+                  <span style={{ fontSize: 13, color: "#4ADE80", fontFamily: mono }}>{formatCurrency(projRevenue)}</span>
+                </div>
+              </>) : (<>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "#EDEDF0" }}>{proj.name}</div>
+                  <div style={{ fontSize: 12, color: "#5E5E6E" }}>{clientName}</div>
+                </div>
+                <div style={{ fontSize: 12, color: "#5E5E6E" }}>{proj.description?.substring(0, 40)}</div>
+                <div style={{ fontSize: 13, color: "#7B7B88", fontFamily: mono }}>{proj.rate ? `${formatCurrency(proj.rate)}/${proj.rateType === "monthly" ? "mo" : proj.rateType === "hourly" ? "hr" : "fixed"}` : "—"}</div>
+                <div><div style={{ fontSize: 13, color: "#4ADE80", fontFamily: mono }}>{formatCurrency(projRevenue)}</div>{projInvoices.length > 0 && <div style={{ fontSize: 11, color: "#3E3E4A" }}>{projInvoices.length} invoice{projInvoices.length !== 1 ? "s" : ""}</div>}</div>
+                <StatusChip status={proj.status} />
+                <ActionMenu items={[
+                  { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "projects", sub: "edit", id: proj.id }) },
+                  ...(proj.clientId ? [{ icon: <Users size={13} />, label: "View Client", onClick: () => navigate({ page: "clients", sub: "detail", id: proj.clientId }) }] : []),
+                  ...statusActions,
+                  { divider: true, icon: null, label: "", onClick: () => {} },
+                  { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: `Delete "${proj.name}"?`, confirmLabel: "Delete", danger: true })) onDelete(proj.id); }, danger: true },
+                ]} />
+              </>)}
             </div>
           );
         })}
@@ -1447,18 +1525,18 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
   );
 }
 
-function ProjectEditPage({ projectId, defaultClientId, clients, projects, onSave, onDelete, navigate }) {
+function ProjectEditPage({ projectId, defaultClientId, clients, projects, onSave, onDelete, navigate, isMobile }) {
   const project = projects.find((p) => p.id === projectId);
   const [form, setForm] = useState(project || { clientId: defaultClientId || clients[0]?.id || "", name: "", description: "", status: "active", startDate: todayStr(), rate: "", rateType: "monthly" });
   const upd = (k, v) => setForm({ ...form, [k]: v });
   return (
     <div>
-      <PageHeader title={project ? `Edit: ${project.name}` : "New Project"} backLabel="Projects" onBack={() => navigate({ page: "projects" })} />
+      <PageHeader title={project ? `Edit: ${project.name}` : "New Project"} backLabel="Projects" onBack={() => navigate({ page: "projects" })} isMobile={isMobile} />
       <div style={{ maxWidth: 600 }}>
         <Field label="Client"><Select value={form.clientId} onChange={(v) => upd("clientId", v)} options={clients.map((c) => ({ value: c.id, label: c.name }))} /></Field>
         <Field label="Project Name"><input style={inputStyle} value={form.name} onChange={(e) => upd("name", e.target.value)} /></Field>
         <Field label="Description"><textarea style={{ ...inputStyle, height: 60, resize: "vertical" }} value={form.description} onChange={(e) => upd("description", e.target.value)} /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
           <Field label="Rate"><input style={inputStyle} type="text" inputMode="decimal" value={form.rate} onChange={(e) => upd("rate", e.target.value)} /></Field>
           <Field label="Rate Type"><Select value={form.rateType} onChange={(v) => upd("rateType", v)} options={[{ value: "monthly", label: "Monthly" }, { value: "hourly", label: "Hourly" }, { value: "fixed", label: "Fixed" }]} /></Field>
           <Field label="Status"><Select value={form.status} onChange={(v) => upd("status", v)} options={[{ value: "active", label: "Active" }, { value: "completed", label: "Completed" }]} /></Field>
@@ -1521,7 +1599,7 @@ function InvoiceRowMenu({ inv, onDelete, onMarkPaid, onDuplicate, navigate }) {
   return <ActionMenu items={items} />;
 }
 
-function InvoicesListPage({ invoices, clients, projects, lineItems, onDelete, onMarkPaid, onDuplicate, navigate, timePeriod, onTimePeriodChange }) {
+function InvoicesListPage({ invoices, clients, projects, lineItems, onDelete, onMarkPaid, onDuplicate, navigate, timePeriod, onTimePeriodChange, isMobile }) {
   const [filter, setFilter] = useState("all");
   const getClientName = (id) => clients.find((c) => c.id === id)?.name || "—";
 
@@ -1545,33 +1623,46 @@ function InvoicesListPage({ invoices, clients, projects, lineItems, onDelete, on
 
   return (
     <div>
-      <PageHeader title="Invoices" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />New Invoice</button>} />
+      <PageHeader title="Invoices" actions={<button style={btnPrimary} onClick={() => navigate({ page: "invoices", sub: "new" })}><Plus size={14} />{isMobile ? "Invoice" : "New Invoice"}</button>} isMobile={isMobile} />
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: "space-between", alignItems: "center", flexWrap: isMobile ? "wrap" : "nowrap" }}>
         <StatusDropdown value={filter} onChange={setFilter} options={[{ value: "all", label: "All" }, ...ALL_INVOICE_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]} counts={filterCounts} />
         <TimePeriodFilter value={timePeriod} onChange={onTimePeriodChange} />
       </div>
 
-      {/* Table */}
+      {/* Table / Cards */}
       <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 130px 100px 120px 80px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
-          {["NUMBER", "CLIENT", "ISSUED", "DUE", "AMOUNT", "STATUS", ""].map((h) => (
-            <span key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>{h}</span>
-          ))}
-        </div>
+        {!isMobile && (
+          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 130px 100px 120px 80px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
+            {["NUMBER", "CLIENT", "ISSUED", "DUE", "AMOUNT", "STATUS", ""].map((h) => (
+              <span key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>{h}</span>
+            ))}
+          </div>
+        )}
         {filtered.map((inv, idx) => (
           <div key={inv.id} onClick={() => navigate({ page: "invoices", sub: "detail", id: inv.id })}
-            style={{ display: "grid", gridTemplateColumns: "120px 1fr 130px 100px 120px 80px 36px", gap: 12, alignItems: "center", padding: "14px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#141416")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-            <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
-            <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
-            <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
-            <span style={{ fontSize: 12, color: inv.status === "overdue" ? "#F87171" : "#5E5E6E" }}>{formatDate(inv.dueDate)}</span>
-            <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(inv.total)}</span>
-            <StatusBadge status={inv.status} />
-            <InvoiceRowMenu inv={inv} onDelete={onDelete} onMarkPaid={onMarkPaid} onDuplicate={onDuplicate} navigate={navigate} />
+            style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "120px 1fr 130px 100px 120px 80px 36px", gap: 12, alignItems: "center", padding: "14px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
+            onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.background = "#141416"; }}
+            onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.background = "transparent"; }}>
+            {isMobile ? (<>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
+                <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(inv.total)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: mono, fontSize: 11, color: "#5E5E6E" }}>{inv.number} · {formatDate(inv.issueDate)}</span>
+                <StatusBadge status={inv.status} />
+              </div>
+            </>) : (<>
+              <span style={{ fontFamily: mono, fontSize: 12, color: "#7B7B88" }}>{inv.number}</span>
+              <span style={{ color: "#EDEDF0", fontSize: 13 }}>{getClientName(inv.clientId)}</span>
+              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(inv.issueDate)}</span>
+              <span style={{ fontSize: 12, color: inv.status === "overdue" ? "#F87171" : "#5E5E6E" }}>{formatDate(inv.dueDate)}</span>
+              <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(inv.total)}</span>
+              <StatusBadge status={inv.status} />
+              <InvoiceRowMenu inv={inv} onDelete={onDelete} onMarkPaid={onMarkPaid} onDuplicate={onDuplicate} navigate={navigate} />
+            </>)}
           </div>
         ))}
       </div>
@@ -1883,7 +1974,7 @@ function NewClientModal({ onClose, onCreate }) {
   );
 }
 
-function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, onSave, onSaveLineItems, onDelete, onMarkPaid, onMarkSent, onAddClient, onDuplicate, navigate, settings }: { invoiceId: string; invoices: any[]; clients: any[]; projects: any[]; lineItems: any[]; onSave: any; onSaveLineItems: any; onDelete: any; onMarkPaid: any; onMarkSent: any; onAddClient: any; onDuplicate: any; navigate: any; settings: Settings }) {
+function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, onSave, onSaveLineItems, onDelete, onMarkPaid, onMarkSent, onAddClient, onDuplicate, navigate, settings, isMobile }: { invoiceId: string; invoices: any[]; clients: any[]; projects: any[]; lineItems: any[]; onSave: any; onSaveLineItems: any; onDelete: any; onMarkPaid: any; onMarkSent: any; onAddClient: any; onDuplicate: any; navigate: any; settings: Settings; isMobile?: boolean }) {
   const invoice = invoices.find((i) => i.id === invoiceId);
   const client = clients.find((c) => c.id === invoice?.clientId);
   const project = projects.find((p) => p.id === invoice?.projectId);
@@ -1895,6 +1986,12 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
   const [showPaidModal, setShowPaidModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+
+  // Refs to always hold the latest form/items values — fixes stale closure in persist()
+  const formRef = useRef(form);
+  const itemsRef = useRef(items);
+  formRef.current = form;
+  itemsRef.current = items;
 
   if (!invoice || !form) return <div style={{ color: "#5E5E6E" }}>Invoice not found.</div>;
 
@@ -1912,6 +2009,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
     if (k === "dueDate" || k === "issueDate") {
       next.status = recomputeStatus(next);
     }
+    formRef.current = next;
     return next;
   });
 
@@ -1922,15 +2020,19 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
       if (field === "quantity" || field === "rate") {
         updated[idx].amount = (parseFloat(updated[idx].quantity) || 0) * (parseFloat(updated[idx].rate) || 0);
       }
+      itemsRef.current = updated;
       return updated;
     });
   }
-  function addItem() { setItems((prev) => [...prev, { id: generateId(), description: "", quantity: 1, rate: 0, amount: 0 }]); }
-  function removeItem(idx) { if (items.length > 1) setItems((prev) => prev.filter((_, i) => i !== idx)); }
+  function addItem() { setItems((prev) => { const next = [...prev, { id: generateId(), description: "", quantity: 1, rate: 0, amount: 0 }]; itemsRef.current = next; return next; }); }
+  function removeItem(idx) { if (items.length > 1) setItems((prev) => { const next = prev.filter((_, i) => i !== idx); itemsRef.current = next; return next; }); }
   const subtotal = items.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
 
   function persist() {
-    onSave({ ...form, subtotal, tax: 0, total: subtotal }, items);
+    const f = formRef.current;
+    const it = itemsRef.current;
+    const sub = it.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+    onSave({ ...f, subtotal: sub, tax: 0, total: sub }, it);
   }
 
   // Inline input style — minimal, blends with the detail view
@@ -1940,9 +2042,9 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
 
   return (
     <div>
-      <PageHeader title={form.number} backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} />
+      <PageHeader title={form.number} backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} isMobile={isMobile} />
       {/* Top bar: Status + Actions */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, padding: "10px 10px 10px 18px", background: "#141416", border: "1px solid #1C1C20", borderRadius: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, padding: isMobile ? "8px 8px 8px 12px" : "10px 10px 10px 18px", background: "#141416", border: "1px solid #1C1C20", borderRadius: 10, flexWrap: isMobile ? "wrap" : "nowrap", gap: isMobile ? 8 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <StatusBadge
             status={form.status}
@@ -1954,7 +2056,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
             }
           />
         </div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {form.status === "draft" ? (<>
             <button style={{ ...btnPrimary, fontSize: 11, padding: "6px 12px", display: "flex", alignItems: "center", gap: 5 }} onClick={() => setShowSendModal(true)}>
               <Send size={11} /> Send
@@ -1978,9 +2080,13 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
               { icon: <Copy size={13} />, label: "Copy Link", onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/invoice/${invoice.viewToken}`); _toastFn("Link copied", "info"); } },
               { icon: null, label: "", onClick: () => {}, divider: true },
               { icon: <X size={13} />, label: "Mark Unpaid", onClick: () => {
-                const revertStatus = form.sentDate ? (form.dueDate < todayStr() ? "overdue" : "outstanding") : "draft";
-                setForm((prev) => ({ ...prev, status: revertStatus, paidDate: null }));
-                onSave({ ...form, status: revertStatus, paidDate: null, subtotal, tax: 0, total: subtotal }, items);
+                setForm((prev) => {
+                  const revertStatus = prev.sentDate ? (prev.dueDate < todayStr() ? "overdue" : "outstanding") : "draft";
+                  const next = { ...prev, status: revertStatus, paidDate: null };
+                  formRef.current = next;
+                  return next;
+                });
+                persist();
                 onMarkPaid(invoice.id, null);
               }},
             ]} />
@@ -2010,8 +2116,12 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
           onSend={(recipients) => {
             const sentDate = todayStr();
             const updates = { recipients, status: "outstanding", sentDate };
-            setForm((prev) => ({ ...prev, ...updates }));
-            onSave({ ...form, ...updates, subtotal, tax: 0, total: subtotal }, items);
+            setForm((prev) => {
+              const next = { ...prev, ...updates };
+              formRef.current = next;
+              return next;
+            });
+            persist();
             onMarkSent(invoice.id);
             setShowSendModal(false);
           }}
@@ -2045,15 +2155,19 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
           onClose={() => setShowNewClientModal(false)}
           onCreate={async (newClient) => {
             const newId = await onAddClient(newClient, { skipNavigate: true });
-            setForm((prev) => ({ ...prev, clientId: newId || newClient.id, recipients: getClientEmails(newClient) }));
-            setTimeout(persist, 0);
+            setForm((prev) => {
+              const next = { ...prev, clientId: newId || newClient.id, recipients: getClientEmails(newClient) };
+              formRef.current = next;
+              return next;
+            });
+            persist();
             setShowNewClientModal(false);
           }}
         />
       )}
 
       {/* Invoice Document */}
-      <div style={{ background: "#0E0E11", borderRadius: 10, border: "1px solid #1C1C20", padding: "32px 36px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "#0E0E11", borderRadius: 10, border: "1px solid #1C1C20", padding: isMobile ? "20px 16px" : "32px 36px", position: "relative", overflow: "hidden" }}>
 
         {/* Paid stamp overlay */}
         {form.status === "paid" && (
@@ -2070,7 +2184,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
         )}
 
         {/* Header: Logo left, Invoice # right — Bonsai style */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 120 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: isMobile ? 40 : 120 }}>
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt={settings.companyName} style={{ height: 56 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -2083,7 +2197,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
 
 
         {/* FROM / BILL TO / DATES row */}
-        <div style={{ display: "flex", gap: 20, marginBottom: 32 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 24 : 20, marginBottom: 32 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", marginBottom: 8 }}>FROM</div>
             <div style={{ color: "#EDEDF0", fontSize: 14, fontWeight: 500 }}>{settings.companyName}</div>
@@ -2091,7 +2205,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", marginBottom: 8 }}>BILL TO</div>
-            <Select value={form.clientId} onChange={(v) => { if (v === "__new__") { setShowNewClientModal(true); return; } const sel = clients.find((c) => c.id === v); const newRecipients = getClientEmails(sel); setForm((prev) => ({ ...prev, clientId: v, recipients: newRecipients })); persist(); }} onBlur={persist}
+            <Select value={form.clientId} onChange={(v) => { if (v === "__new__") { setShowNewClientModal(true); return; } const sel = clients.find((c) => c.id === v); const newRecipients = getClientEmails(sel); setForm((prev) => { const next = { ...prev, clientId: v, recipients: newRecipients }; formRef.current = next; return next; }); persist(); }} onBlur={persist}
               options={[...clients.map((c) => ({ value: c.id, label: c.name })), { value: "__new__", label: "+ New Client" }]}
               style={{ maxWidth: 220 }}
               triggerStyle={{ fontSize: 14, fontWeight: 500, padding: "2px 0", background: "transparent", border: "none", color: "#EDEDF0", gap: 4 }} />
@@ -2101,7 +2215,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
             {(() => { const cp = projects.filter((p) => p.clientId === form.clientId); return cp.length > 0 ? (
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", marginBottom: 4 }}>PROJECT</div>
-                <Select value={form.projectId || ""} onChange={(v) => { const next = { ...form, projectId: v }; setForm(next); onSave({ ...next, subtotal, tax: 0, total: subtotal }, items); }}
+                <Select value={form.projectId || ""} onChange={(v) => { setForm((prev) => { const next = { ...prev, projectId: v }; formRef.current = next; return next; }); persist(); }}
                   options={[{ value: "", label: "None" }, ...cp.map((p) => ({ value: p.id, label: p.name }))]}
                   style={{ maxWidth: 220 }}
                   triggerStyle={{ fontSize: 13, padding: "2px 0", background: "transparent", border: "none", color: "#7B7B88", gap: 4 }} />
@@ -2114,7 +2228,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                 {(form.recipients || []).map((email, idx) => (
                   <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 6px 2px 8px", background: "#1A1A1E", borderRadius: 4, fontSize: 11, color: "#7B7B88", border: "1px solid #1C1C20" }}>
                     {email}
-                    <button onClick={() => { const updated = form.recipients.filter((_, i) => i !== idx); setForm((prev) => ({ ...prev, recipients: updated })); setTimeout(persist, 0); }}
+                    <button onClick={() => { const updated = form.recipients.filter((_, i) => i !== idx); setForm((prev) => { const next = { ...prev, recipients: updated }; formRef.current = next; return next; }); persist(); }}
                       style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}><X size={10} /></button>
                   </span>
                 ))}
@@ -2126,18 +2240,18 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                       e.preventDefault();
                       const email = (e.target as HTMLInputElement).value.trim().toLowerCase().replace(/,$/, "");
                       if (email && email.includes("@") && !(form.recipients || []).includes(email)) {
-                        setForm((prev) => ({ ...prev, recipients: [...(prev.recipients || []), email] }));
+                        setForm((prev) => { const next = { ...prev, recipients: [...(prev.recipients || []), email] }; formRef.current = next; return next; });
                         (e.target as HTMLInputElement).value = "";
-                        setTimeout(persist, 0);
+                        persist();
                       }
                     }
                   }}
                   onBlur={(e) => {
                     const email = e.target.value.trim().toLowerCase();
                     if (email && email.includes("@") && !(form.recipients || []).includes(email)) {
-                      setForm((prev) => ({ ...prev, recipients: [...(prev.recipients || []), email] }));
+                      setForm((prev) => { const next = { ...prev, recipients: [...(prev.recipients || []), email] }; formRef.current = next; return next; });
                       e.target.value = "";
-                      setTimeout(persist, 0);
+                      persist();
                     }
                   }}
                 />
@@ -2149,7 +2263,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                     const ac = (client?.additionalContacts || []).find((c) => c.email === email);
                     const label = ac ? (ac.name || ac.role || email) : (client?.contact || email);
                     return (
-                      <button key={email} onClick={() => { setForm((prev) => ({ ...prev, recipients: [...(prev.recipients || []), email] })); setTimeout(persist, 0); }}
+                      <button key={email} onClick={() => { setForm((prev) => { const next = { ...prev, recipients: [...(prev.recipients || []), email] }; formRef.current = next; return next; }); persist(); }}
                         style={{ background: "none", border: "1px dashed #2A2A30", borderRadius: 4, padding: "1px 6px", fontSize: 10, color: "#4A8DB8", cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 3 }}>
                         <Plus size={8} />{label}
                       </button>
@@ -2202,7 +2316,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
               </td>
               <td style={{ padding: "12px 0", color: "#EDEDF0", fontSize: 14, textAlign: "right", fontWeight: 500, fontFamily: mono, verticalAlign: "top" }}>{formatCurrency(item.amount)}</td>
               <td style={{ textAlign: "center", verticalAlign: "top" }}>
-                {items.length > 1 && <button onClick={() => { removeItem(idx); setTimeout(persist, 0); }} style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", fontSize: 14, padding: "4px" }}>×</button>}
+                {items.length > 1 && <button onClick={() => { removeItem(idx); persist(); }} style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", fontSize: 14, padding: "4px" }}>×</button>}
               </td>
             </tr>
           ))}</tbody>
@@ -2279,7 +2393,7 @@ function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: exis
       {clientProjects.length > 0 && (
         <Field label="Project"><Select value={form.projectId} onChange={(v) => upd("projectId", v)} options={[{ value: "", label: "None" }, ...clientProjects.map((p) => ({ value: p.id, label: p.name }))]} /></Field>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
         <Field label="Issue Date"><DatePicker value={form.issueDate} onChange={(v) => upd("issueDate", v)} /></Field>
         <Field label="Due Date"><DueDatePicker issueDate={form.issueDate} value={form.dueDate} onChange={(v) => upd("dueDate", v)} /></Field>
       </div>
@@ -2289,7 +2403,7 @@ function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: exis
         <div style={{ fontSize: 12, fontWeight: 500, color: "#7B7B88", marginBottom: 8, letterSpacing: "0.3px" }}>LINE ITEMS</div>
         {items.map((item, idx) => (
           <div key={item.id} style={{ marginBottom: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 100px 32px", gap: 8, alignItems: "end" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 32px" : "1fr 70px 100px 100px 32px", gap: 8, alignItems: isMobile ? "start" : "end" }}>
               <input style={{ ...inputStyle, fontSize: 13 }} placeholder="Description" value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} />
               <input style={{ ...inputStyle, fontSize: 13, textAlign: "center" }} type="text" inputMode="decimal" placeholder="Qty" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
               <input style={{ ...inputStyle, fontSize: 13, textAlign: "right" }} type="text" inputMode="decimal" placeholder="Rate" value={item.rate} onChange={(e) => updateItem(idx, "rate", e.target.value)} />
@@ -2322,10 +2436,10 @@ function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: exis
   );
 }
 
-function InvoiceNewPage({ invoices, clients, projects, onSave, navigate, settings }: { invoices: any[]; clients: any[]; projects: any[]; onSave: any; navigate: any; settings: Settings }) {
+function InvoiceNewPage({ invoices, clients, projects, onSave, navigate, settings, isMobile }: { invoices: any[]; clients: any[]; projects: any[]; onSave: any; navigate: any; settings: Settings; isMobile?: boolean }) {
   return (
     <div>
-      <PageHeader title="New Invoice" backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} />
+      <PageHeader title="New Invoice" backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} isMobile={isMobile} />
       <InvoiceEditView invoice={null} invoices={invoices} clients={clients} projects={projects} lineItems={[]} onSave={async (inv, items) => { const newId = await onSave(inv, items); navigate({ page: "invoices", sub: "detail", id: newId }); }} onCancel={() => navigate({ page: "invoices" })} settings={settings} />
     </div>
   );
@@ -2334,7 +2448,7 @@ function InvoiceNewPage({ invoices, clients, projects, onSave, navigate, setting
 // ============================================================
 // PAGE: EXPENSES
 // ============================================================
-function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePeriodChange, onSave, onDelete, onDuplicate }) {
+function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePeriodChange, onSave, onDelete, onDuplicate, isMobile }) {
   const [catFilter, setCatFilter] = useState<string[]>([]);
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const catDropdownRef = useRef<HTMLDivElement>(null);
@@ -2369,11 +2483,11 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
 
   return (
     <div>
-      <PageHeader title="Expenses" actions={<button style={btnPrimary} onClick={() => navigate({ page: "expenses", sub: "new" })}><Plus size={14} />New Expense</button>} />
+      <PageHeader title="Expenses" actions={<button style={btnPrimary} onClick={() => navigate({ page: "expenses", sub: "new" })}><Plus size={14} />{isMobile ? "Expense" : "New Expense"}</button>} isMobile={isMobile} />
 
       {/* Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16, marginBottom: 24, padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20" }}>
-        <div><div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px" }}>TOTAL ({getTimePeriodLabel(timePeriod)})</div><div style={{ fontSize: 20, fontWeight: 600, color: "#EDEDF0", fontFamily: mono }}>{formatCurrency(totalFiltered)}</div></div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: isMobile ? 12 : 16, marginBottom: 24, padding: isMobile ? "12px 16px" : "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20" }}>
+        <div><div style={{ fontSize: 10, color: "#5E5E6E", letterSpacing: "0.5px" }}>TOTAL ({getTimePeriodLabel(timePeriod)})</div><div style={{ fontSize: isMobile ? 18 : 20, fontWeight: 600, color: "#EDEDF0", fontFamily: mono }}>{formatCurrency(totalFiltered)}</div></div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {Object.entries(catBreakdown).map(([cat, amt]) => (
             <span key={cat} style={{ padding: "3px 8px", borderRadius: 4, fontSize: 10, background: "#1A1A1E", color: "#7B7B88", border: "1px solid #1C1C20" }}>
@@ -2384,7 +2498,7 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
       </div>
 
       {/* Category Dropdown + Time Period */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: isMobile ? 8 : 16, flexWrap: isMobile ? "wrap" : "nowrap" }}>
         <div ref={catDropdownRef} style={{ position: "relative" }}>
           <button onClick={() => setCatDropdownOpen(!catDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 6, border: "1px solid #1C1C20", background: catFilter.length > 0 ? "#1A1A1E" : "transparent", color: catFilter.length > 0 ? "#EDEDF0" : "#5E5E6E", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
             {catLabel} <ChevronDown size={12} />
@@ -2418,30 +2532,42 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
 
       {/* Table */}
       <div style={{ borderRadius: 8, border: "1px solid #1C1C20" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 160px 120px 100px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
-          {["DATE", "VENDOR", "DESCRIPTION", "CATEGORY", "AMOUNT", ""].map((h, i) => (
-            <span key={i} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", ...(h === "AMOUNT" ? { textAlign: "right" } : {}) }}>{h}</span>
-          ))}
-        </div>
+        {!isMobile && (
+          <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 160px 120px 100px 36px", gap: 12, padding: "10px 20px", background: "#0A0A0C", borderBottom: "1px solid #1C1C20", borderRadius: "8px 8px 0 0" }}>
+            {["DATE", "VENDOR", "DESCRIPTION", "CATEGORY", "AMOUNT", ""].map((h, i) => (
+              <span key={i} style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", ...(h === "AMOUNT" ? { textAlign: "right" } : {}) }}>{h}</span>
+            ))}
+          </div>
+        )}
         {filtered.map((exp, idx) => (
           <div key={exp.id} onClick={() => navigate({ page: "expenses", sub: "edit", id: exp.id })}
-            style={{ display: "grid", gridTemplateColumns: "100px 1fr 160px 120px 100px 36px", gap: 12, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#141416")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-            <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(exp.date)}</span>
-            <span style={{ color: "#EDEDF0", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>{exp.vendor}{(exp.recurring === 1 || exp.recurringSourceId) && <Repeat size={11} style={{ color: "#4A8DB8", flexShrink: 0 }} />}</span>
-            <span style={{ fontSize: 12, color: "#5E5E6E" }}>{exp.description}</span>
-            <span style={{ fontSize: 11, color: "#5E5E6E" }}>{getCategoryLabel(exp.category)}</span>
-            <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(exp.amount)}</span>
-            <ActionMenu items={[
-              { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "expenses", sub: "edit", id: exp.id }) },
-              ...(exp.recurring === 1
-                ? [{ icon: <Repeat size={13} />, label: "Stop Recurring", onClick: () => onSave({ ...exp, recurring: 0, recurringDay: null }) }]
-                : [{ icon: <Repeat size={13} />, label: "Make Recurring", onClick: () => onSave({ ...exp, recurring: 1, recurringDay: Math.min(parseInt(exp.date?.split("-")[2]) || 1, 28) }) }]),
-              { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(exp) },
-              { divider: true, icon: null, label: "", onClick: () => {} },
-              { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: "Delete this expense?", confirmLabel: "Delete", danger: true })) onDelete(exp.id); }, danger: true },
-            ]} />
+            style={isMobile ? { padding: "12px 16px", cursor: "pointer", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "100px 1fr 160px 120px 100px 36px", gap: 12, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20", cursor: "pointer" }}
+            onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.background = "#141416"; }}
+            onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.background = "transparent"; }}>
+            {isMobile ? (<>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ color: "#EDEDF0", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>{exp.vendor}{(exp.recurring === 1 || exp.recurringSourceId) && <Repeat size={11} style={{ color: "#4A8DB8", flexShrink: 0 }} />}</span>
+                <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(exp.amount)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "#5E5E6E" }}>{formatDate(exp.date)} · {getCategoryLabel(exp.category)}</span>
+              </div>
+            </>) : (<>
+              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{formatDate(exp.date)}</span>
+              <span style={{ color: "#EDEDF0", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>{exp.vendor}{(exp.recurring === 1 || exp.recurringSourceId) && <Repeat size={11} style={{ color: "#4A8DB8", flexShrink: 0 }} />}</span>
+              <span style={{ fontSize: 12, color: "#5E5E6E" }}>{exp.description}</span>
+              <span style={{ fontSize: 11, color: "#5E5E6E" }}>{getCategoryLabel(exp.category)}</span>
+              <span style={{ fontFamily: mono, fontSize: 13, color: "#EDEDF0", textAlign: "right" }}>{formatCurrency(exp.amount)}</span>
+              <ActionMenu items={[
+                { icon: <Pencil size={13} />, label: "Edit", onClick: () => navigate({ page: "expenses", sub: "edit", id: exp.id }) },
+                ...(exp.recurring === 1
+                  ? [{ icon: <Repeat size={13} />, label: "Stop Recurring", onClick: () => onSave({ ...exp, recurring: 0, recurringDay: null }) }]
+                  : [{ icon: <Repeat size={13} />, label: "Make Recurring", onClick: () => onSave({ ...exp, recurring: 1, recurringDay: Math.min(parseInt(exp.date?.split("-")[2]) || 1, 28) }) }]),
+                { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(exp) },
+                { divider: true, icon: null, label: "", onClick: () => {} },
+                { icon: <Trash2 size={13} />, label: "Delete", onClick: async () => { if (await _confirmFn({ title: "Delete this expense?", confirmLabel: "Delete", danger: true })) onDelete(exp.id); }, danger: true },
+              ]} />
+            </>)}
           </div>
         ))}
       </div>
@@ -2449,7 +2575,7 @@ function ExpensesListPage({ expenses, clients, navigate, timePeriod, onTimePerio
   );
 }
 
-function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDelete, navigate, settings }: { expenseId: string; expenses: any[]; clients: any[]; projects: any[]; onSave: any; onDelete: any; navigate: any; settings: Settings }) {
+function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDelete, navigate, settings, isMobile }: { expenseId: string; expenses: any[]; clients: any[]; projects: any[]; onSave: any; onDelete: any; navigate: any; settings: Settings; isMobile?: boolean }) {
   const expense = expenses.find((e) => e.id === expenseId);
   const [form, setForm] = useState(expense || { date: todayStr(), vendor: "", description: "", category: "software", amount: "", clientId: "", projectId: "", notes: "", taxDeductible: settings.defaultTaxDeductible, recurring: 0, recurringDay: null });
   const upd = (k, v) => setForm({ ...form, [k]: v });
@@ -2457,14 +2583,14 @@ function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDel
 
   return (
     <div>
-      <PageHeader title={expense ? `Edit Expense` : "New Expense"} backLabel="Expenses" onBack={() => navigate({ page: "expenses" })} />
+      <PageHeader title={expense ? `Edit Expense` : "New Expense"} backLabel="Expenses" onBack={() => navigate({ page: "expenses" })} isMobile={isMobile} />
       <div style={{ maxWidth: 600 }}>
         {expense?.recurringSourceId && (
           <div style={{ marginBottom: 16, padding: "10px 12px", background: "rgba(52,110,150,0.08)", borderRadius: 6, border: "1px solid rgba(52,110,150,0.15)", fontSize: 12, color: "#4A8DB8", display: "flex", alignItems: "center", gap: 6 }}>
             <Repeat size={12} /> This expense was auto-generated from a recurring template. Edits apply only to this instance.
           </div>
         )}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <Field label="Date"><DatePicker value={form.date} onChange={(v) => upd("date", v)} /></Field>
           <Field label="Amount"><input style={inputStyle} type="text" inputMode="decimal" step="0.01" value={form.amount} onChange={(e) => upd("amount", e.target.value)} /></Field>
         </div>
@@ -2473,7 +2599,7 @@ function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDel
         <Field label="Category">
           <Select value={form.category} onChange={(v) => upd("category", v)} groups={EXPENSE_CATEGORIES} />
         </Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <Field label="Client (optional)">
             <Select value={form.clientId} onChange={(v) => setForm({ ...form, clientId: v, projectId: "" })} options={[{ value: "", label: "— None —" }, ...clients.map((c) => ({ value: c.id, label: c.name }))]} placeholder="— None —" />
           </Field>
@@ -2517,7 +2643,7 @@ function ExpenseEditPage({ expenseId, expenses, clients, projects, onSave, onDel
 // ============================================================
 // PAGE: REVENUE
 // ============================================================
-function RevenuePage({ invoices, expenses, clients }) {
+function RevenuePage({ invoices, expenses, clients, isMobile }) {
   const thisYear = new Date().getFullYear();
   const paidInvoices = invoices.filter((i) => i.status === "paid");
   const totalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0);
@@ -2535,13 +2661,13 @@ function RevenuePage({ invoices, expenses, clients }) {
 
   return (
     <div>
-      <PageHeader title="Revenue" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32 }}>
-        <StatCard label="Total Revenue" value={formatCurrency(totalRevenue)} sub="All time" />
-        <StatCard label={`${thisYear} Revenue`} value={formatCurrency(ytdRevenue)} sub="Year to date" />
-        <StatCard label="Monthly Average" value={formatCurrency(ytdRevenue / ytdMonths)} sub={String(thisYear)} />
-        <StatCard label="YTD Expenses" value={formatCurrency(ytdExpenses)} sub={String(thisYear)} />
-        <StatCard label="YTD Profit" value={formatCurrency(ytdRevenue - ytdExpenses)} sub={String(thisYear)} />
+      <PageHeader title="Revenue" isMobile={isMobile} />
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(5, 1fr)", gap: isMobile ? 8 : 16, marginBottom: 32 }}>
+        <StatCard label="Total Revenue" value={formatCurrency(totalRevenue)} sub="All time" isMobile={isMobile} />
+        <StatCard label={`${thisYear} Revenue`} value={formatCurrency(ytdRevenue)} sub="Year to date" isMobile={isMobile} />
+        <StatCard label="Monthly Average" value={formatCurrency(ytdRevenue / ytdMonths)} sub={String(thisYear)} isMobile={isMobile} />
+        <StatCard label="YTD Expenses" value={formatCurrency(ytdExpenses)} sub={String(thisYear)} isMobile={isMobile} />
+        <StatCard label="YTD Profit" value={formatCurrency(ytdRevenue - ytdExpenses)} sub={String(thisYear)} isMobile={isMobile} />
       </div>
 
       {/* Monthly Breakdown */}
@@ -2554,14 +2680,28 @@ function RevenuePage({ invoices, expenses, clients }) {
           const [y, m] = month.split("-");
           const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleString("en", { month: "long", year: "numeric" });
           return (
-            <div key={month} style={{ display: "grid", gridTemplateColumns: "160px 1fr 120px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20" }}>
-              <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
-              <div style={{ position: "relative", height: 20, background: "#0A0A0C", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 4 }} />
-              </div>
-              <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500, textAlign: "right" }}>{formatCurrency(rev)}</span>
-              <span style={{ fontFamily: mono, fontSize: 12, color: "#F87171", textAlign: "right" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
-              <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171", textAlign: "right" }}>{formatCurrency(rev - exp)}</span>
+            <div key={month} style={isMobile ? { padding: "12px 16px", borderBottom: "1px solid #1C1C20" } : { display: "grid", gridTemplateColumns: "160px 1fr 120px 100px 100px", gap: 16, alignItems: "center", padding: "12px 20px", background: "transparent", borderBottom: "1px solid #1C1C20" }}>
+              {isMobile ? (<>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
+                  <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500 }}>{formatCurrency(rev)}</span>
+                </div>
+                <div style={{ position: "relative", height: 16, background: "#0A0A0C", borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 4 }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontFamily: mono, fontSize: 11, color: "#F87171" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
+                  <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171" }}>{formatCurrency(rev - exp)}</span>
+                </div>
+              </>) : (<>
+                <span style={{ fontSize: 13, color: "#7B7B88" }}>{label}</span>
+                <div style={{ position: "relative", height: 20, background: "#0A0A0C", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "linear-gradient(90deg, #1a3a1a, #2a5a2a)", borderRadius: 4 }} />
+                </div>
+                <span style={{ fontFamily: mono, fontSize: 14, color: "#EDEDF0", fontWeight: 500, textAlign: "right" }}>{formatCurrency(rev)}</span>
+                <span style={{ fontFamily: mono, fontSize: 12, color: "#F87171", textAlign: "right" }}>{exp > 0 ? `-${formatCurrency(exp)}` : ""}</span>
+                <span style={{ fontFamily: mono, fontSize: 12, color: (rev - exp) >= 0 ? "#4ADE80" : "#F87171", textAlign: "right" }}>{formatCurrency(rev - exp)}</span>
+              </>)}
             </div>
           );
         })}
@@ -2576,10 +2716,10 @@ function RevenuePage({ invoices, expenses, clients }) {
           if (rev === 0) return null;
           const pct = totalRevenue > 0 ? Math.round((rev / totalRevenue) * 100) : 0;
           return (
-            <div key={client.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20" }}>
+            <div key={client.id} style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", padding: isMobile ? "12px 16px" : "16px 20px", background: "#141416", borderRadius: 8, border: "1px solid #1C1C20", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 0 }}>
               <div>
                 <span style={{ fontSize: 14, fontWeight: 500, color: "#EDEDF0" }}>{client.name}</span>
-                <span style={{ fontSize: 12, color: "#3E3E4A", marginLeft: 12 }}>{paidCount} invoices · {pct}% of total</span>
+                <span style={{ fontSize: 12, color: "#3E3E4A", marginLeft: isMobile ? 0 : 12, display: isMobile ? "block" : "inline" }}>{paidCount} invoices · {pct}% of total</span>
               </div>
               <span style={{ fontFamily: mono, fontSize: 16, fontWeight: 600, color: "#4ADE80" }}>{formatCurrency(rev)}</span>
             </div>
@@ -2602,17 +2742,17 @@ const settingsTabs = [
   { key: "expenses", label: "Expense Defaults" },
 ];
 
-function SettingsPage({ settings, onSave, session }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void>; session?: any }) {
+function SettingsPage({ settings, onSave, session, isMobile }: { settings: Settings; onSave: (data: Partial<Settings>) => Promise<void>; session?: any; isMobile?: boolean }) {
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
     <div>
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings" isMobile={isMobile} />
       {/* Tab navigation */}
-      <div style={{ display: "flex", gap: 4, background: "#0A0A0C", borderRadius: 6, padding: 2, border: "1px solid #1C1C20", marginBottom: 32, width: "fit-content" }}>
+      <div style={{ display: "flex", gap: 4, background: "#0A0A0C", borderRadius: 6, padding: 2, border: "1px solid #1C1C20", marginBottom: isMobile ? 20 : 32, width: isMobile ? "100%" : "fit-content", overflowX: isMobile ? "auto" : "visible", WebkitOverflowScrolling: "touch" }}>
         {settingsTabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            style={{ padding: "6px 14px", borderRadius: 4, border: "none", background: activeTab === tab.key ? "#1A1A1E" : "transparent", color: activeTab === tab.key ? "#EDEDF0" : "#3E3E4A", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+            style={{ padding: isMobile ? "6px 10px" : "6px 14px", borderRadius: 4, border: "none", background: activeTab === tab.key ? "#1A1A1E" : "transparent", color: activeTab === tab.key ? "#EDEDF0" : "#3E3E4A", fontSize: isMobile ? 11 : 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0 }}>
             {tab.label}
           </button>
         ))}
@@ -2888,6 +3028,14 @@ export default function HoldFastApp({ session }: { session?: any }) {
   const [prospects, setProspects] = useState([]);
   const [settings, setSettings] = useState<Settings>({ ...SETTINGS_DEFAULTS });
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [route, setRoute] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -2963,6 +3111,7 @@ export default function HoldFastApp({ session }: { session?: any }) {
   const navigate = (r) => {
     setRoute(r);
     sessionStorage.setItem("hfs-route", JSON.stringify(r));
+    setSidebarOpen(false);
   };
 
   // --- CRUD (async, backed by server actions) ---
@@ -3133,44 +3282,44 @@ export default function HoldFastApp({ session }: { session?: any }) {
   function renderPage() {
     const { page, sub, id } = route;
 
-    if (page === "dashboard") return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
+    if (page === "dashboard") return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
 
     if (page === "prospects") {
-      if (sub === "new") return <ProspectEditPage prospectId="new" prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} />;
-      if (sub === "edit" && id) return <ProspectEditPage prospectId={id} prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} />;
-      return <ProspectsListPage prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} />;
+      if (sub === "new") return <ProspectEditPage prospectId="new" prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} isMobile={isMobile} />;
+      if (sub === "edit" && id) return <ProspectEditPage prospectId={id} prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} isMobile={isMobile} />;
+      return <ProspectsListPage prospects={prospects} onSave={saveProspect} onDelete={deleteProspect} onConvert={convertProspectToClient} navigate={navigate} isMobile={isMobile} />;
     }
 
     if (page === "clients") {
-      if (sub === "new") return <ClientDetailPage clientId="new" clients={clients} projects={projects} invoices={invoices} onSave={saveClient} onDelete={deleteClient} onSaveProject={saveProject} onDeleteProject={deleteProject} navigate={navigate} />;
-      if (sub === "detail" && id) return <ClientDetailPage clientId={id} clients={clients} projects={projects} invoices={invoices} onSave={saveClient} onDelete={deleteClient} onSaveProject={saveProject} onDeleteProject={deleteProject} navigate={navigate} />;
-      return <ClientsListPage clients={clients} projects={projects} invoices={invoices} navigate={navigate} onSave={saveClient} onDelete={deleteClient} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
+      if (sub === "new") return <ClientDetailPage clientId="new" clients={clients} projects={projects} invoices={invoices} onSave={saveClient} onDelete={deleteClient} onSaveProject={saveProject} onDeleteProject={deleteProject} navigate={navigate} isMobile={isMobile} />;
+      if (sub === "detail" && id) return <ClientDetailPage clientId={id} clients={clients} projects={projects} invoices={invoices} onSave={saveClient} onDelete={deleteClient} onSaveProject={saveProject} onDeleteProject={deleteProject} navigate={navigate} isMobile={isMobile} />;
+      return <ClientsListPage clients={clients} projects={projects} invoices={invoices} navigate={navigate} onSave={saveClient} onDelete={deleteClient} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
     }
 
     if (page === "projects") {
-      if (sub === "new") return <ProjectEditPage projectId="new" defaultClientId={route.clientId} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} />;
-      if (sub === "edit" && id) return <ProjectEditPage projectId={id} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} />;
-      return <ProjectsListPage projects={projects} clients={clients} invoices={invoices} navigate={navigate} onSave={saveProject} onDelete={deleteProject} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
+      if (sub === "new") return <ProjectEditPage projectId="new" defaultClientId={route.clientId} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} isMobile={isMobile} />;
+      if (sub === "edit" && id) return <ProjectEditPage projectId={id} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} isMobile={isMobile} />;
+      return <ProjectsListPage projects={projects} clients={clients} invoices={invoices} navigate={navigate} onSave={saveProject} onDelete={deleteProject} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
     }
 
     if (page === "invoices") {
-      if (sub === "new") return <InvoiceNewPage invoices={invoices} clients={clients} projects={projects} onSave={saveInvoice} navigate={navigate} settings={settings} />;
+      if (sub === "new") return <InvoiceNewPage invoices={invoices} clients={clients} projects={projects} onSave={saveInvoice} navigate={navigate} settings={settings} isMobile={isMobile} />;
       const duplicateInvoice = async (inv) => { const newId = await saveInvoice({ ...inv, id: undefined, viewToken: undefined, number: nextInvoiceNumber(invoices, settings.invoicePrefix), status: "draft", sentDate: null, paidDate: null, viewedDate: null, recipients: inv.recipients || [] }, lineItems.filter((li) => li.invoiceId === inv.id).map((li) => ({ ...li, id: undefined }))); if (newId) navigate({ page: "invoices", sub: "detail", id: newId }); _toastFn("Invoice duplicated"); };
-      if (sub === "detail" && id) return <InvoiceDetailPage invoiceId={id} invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onSave={saveInvoice} onDelete={deleteInvoice} onMarkPaid={markPaid} onMarkSent={markSent} onAddClient={saveClient} onDuplicate={duplicateInvoice} navigate={navigate} settings={settings} />;
-      return <InvoicesListPage invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onDelete={deleteInvoice} onMarkPaid={markPaid} onDuplicate={duplicateInvoice} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
+      if (sub === "detail" && id) return <InvoiceDetailPage invoiceId={id} invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onSave={saveInvoice} onDelete={deleteInvoice} onMarkPaid={markPaid} onMarkSent={markSent} onAddClient={saveClient} onDuplicate={duplicateInvoice} navigate={navigate} settings={settings} isMobile={isMobile} />;
+      return <InvoicesListPage invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onDelete={deleteInvoice} onMarkPaid={markPaid} onDuplicate={duplicateInvoice} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
     }
 
     if (page === "expenses") {
-      if (sub === "new") return <ExpenseEditPage expenseId="new" expenses={expenses} clients={clients} projects={projects} onSave={saveExpense} onDelete={deleteExpense} navigate={navigate} settings={settings} />;
-      if (sub === "edit" && id) return <ExpenseEditPage expenseId={id} expenses={expenses} clients={clients} projects={projects} onSave={saveExpense} onDelete={deleteExpense} navigate={navigate} settings={settings} />;
-      return <ExpensesListPage expenses={expenses} clients={clients} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} onSave={saveExpense} onDelete={deleteExpense} onDuplicate={async (exp) => { await saveExpense({ ...exp, id: undefined, date: todayStr(), recurringSourceId: null }); }} />;
+      if (sub === "new") return <ExpenseEditPage expenseId="new" expenses={expenses} clients={clients} projects={projects} onSave={saveExpense} onDelete={deleteExpense} navigate={navigate} settings={settings} isMobile={isMobile} />;
+      if (sub === "edit" && id) return <ExpenseEditPage expenseId={id} expenses={expenses} clients={clients} projects={projects} onSave={saveExpense} onDelete={deleteExpense} navigate={navigate} settings={settings} isMobile={isMobile} />;
+      return <ExpensesListPage expenses={expenses} clients={clients} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} onSave={saveExpense} onDelete={deleteExpense} onDuplicate={async (exp) => { await saveExpense({ ...exp, id: undefined, date: todayStr(), recurringSourceId: null }); }} isMobile={isMobile} />;
     }
 
-    if (page === "revenue") return <RevenuePage invoices={invoices} expenses={expenses} clients={clients} />;
+    if (page === "revenue") return <RevenuePage invoices={invoices} expenses={expenses} clients={clients} isMobile={isMobile} />;
 
-    if (page === "settings") return <SettingsPage settings={settings} onSave={saveSettings} session={session} />;
+    if (page === "settings") return <SettingsPage settings={settings} onSave={saveSettings} session={session} isMobile={isMobile} />;
 
-    return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />;
+    return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
   }
 
   if (loading) {
@@ -3186,8 +3335,16 @@ export default function HoldFastApp({ session }: { session?: any }) {
     <ConfirmProvider>
     <AnimationStyles />
     <div style={{ display: "flex", height: "100vh", background: "#0A0A0C", color: "#EDEDF0", fontFamily: "var(--font-inter), 'Inter', -apple-system, sans-serif", fontSize: 13 }}>
+      {/* Mobile Sidebar Backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 998, animation: "fadeIn 150ms ease" }} />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width: 200, background: "#141416", borderRight: "1px solid #1C1C20", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <div style={{
+        width: 200, background: "#141416", borderRight: "1px solid #1C1C20", display: "flex", flexDirection: "column", flexShrink: 0,
+        ...(isMobile ? { position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 999, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 200ms ease" } : {})
+      }}>
         <div onClick={() => navigate({ page: "dashboard" })} style={{ padding: "16px 20px", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
           <svg width="15" height="15" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="210" height="210" rx="105" fill="white"/>
@@ -3224,7 +3381,17 @@ export default function HoldFastApp({ session }: { session?: any }) {
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: "auto", padding: "32px 40px" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "32px 40px", ...(isMobile ? { paddingTop: 60 } : {}) }}>
+        {/* Mobile Top Bar */}
+        {isMobile && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 52, background: "#0A0A0C", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 997 }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#EDEDF0", cursor: "pointer", padding: 4, display: "flex" }}>
+              <Menu size={20} />
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#EDEDF0", letterSpacing: "0.3px" }}>HOLD FAST OS</span>
+            <div style={{ width: 28 }} />
+          </div>
+        )}
         {renderPage()}
       </div>
 
