@@ -3065,7 +3065,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
   const [prospects, setProspects] = useState([]);
   const [settings, setSettings] = useState<Settings>({ ...SETTINGS_DEFAULTS });
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -3386,7 +3386,7 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
     return <DashboardPage invoices={invoices} clients={clients} expenses={expenses} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
   }
 
-  if (loading) {
+  if (loading || isMobile === null) {
     return (
       <>
       <AnimationStyles />
