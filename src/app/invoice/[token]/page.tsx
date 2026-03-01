@@ -2,6 +2,8 @@
 import { getInvoiceByToken, recordInvoiceView, getSettingsPublic } from "@/lib/actions";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 function formatCurrency(amount) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
 }
