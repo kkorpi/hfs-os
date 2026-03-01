@@ -2273,7 +2273,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
               ) : null; })()}
             </div>
           </div>
-          <div style={{ marginLeft: "auto" }}>
+          <div style={{ marginLeft: isMobile ? 0 : "auto" }}>
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", marginBottom: 4 }}>ISSUED ON</div>
               <DatePicker value={form.issueDate} onChange={(v) => { upd("issueDate", v); persist(); }} onBlur={persist} hideChevron
@@ -2294,33 +2294,60 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
         </div>
 
         {/* Line Items */}
-        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 8 }}>
-          <thead><tr style={{ borderBottom: "2px solid #1C1C20" }}>
-            <th style={{ textAlign: "left", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>DESCRIPTION</th>
-            <th style={{ textAlign: "center", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 70 }}>QTY</th>
-            <th style={{ textAlign: "right", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 110 }}>RATE</th>
-            <th style={{ textAlign: "right", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 110 }}>AMOUNT</th>
-            <th style={{ width: 32 }} />
-          </tr></thead>
-          <tbody>{items.map((item, idx) => (
-            <tr key={item.id} style={{ borderBottom: "1px solid #1C1C20" }}>
-              <td style={{ padding: "4px 0" }}>
-                <input style={{ ...inlineInput, color: "#EDEDF0" }} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} placeholder="Description" />
-                <input style={{ ...inlineInput, color: "#5E5E6E", fontSize: 11, padding: "0px 6px 4px" }} value={item.subtext || ""} onChange={(e) => updateItem(idx, "subtext", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} placeholder="Optional note..." />
-              </td>
-              <td style={{ padding: "4px 0", verticalAlign: "top" }}>
-                <input style={{ ...inlineInput, textAlign: "center", color: "#7B7B88", fontFamily: mono }} type="text" inputMode="decimal" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
-              </td>
-              <td style={{ padding: "4px 0", verticalAlign: "top" }}>
-                <input style={{ ...inlineInput, textAlign: "right", color: "#7B7B88", fontFamily: mono }} type="text" inputMode="decimal" value={item.rate} onChange={(e) => updateItem(idx, "rate", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
-              </td>
-              <td style={{ padding: "12px 0", color: "#EDEDF0", fontSize: 14, textAlign: "right", fontWeight: 500, fontFamily: mono, verticalAlign: "top" }}>{formatCurrency(item.amount)}</td>
-              <td style={{ textAlign: "center", verticalAlign: "top" }}>
-                {items.length > 1 && <button onClick={() => { removeItem(idx); persist(); }} style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", fontSize: 14, padding: "4px" }}>×</button>}
-              </td>
-            </tr>
-          ))}</tbody>
-        </table>
+        {isMobile ? (
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "2px solid #1C1C20" }}>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>DESCRIPTION</span>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>AMOUNT</span>
+            </div>
+            {items.map((item, idx) => (
+              <div key={item.id} style={{ borderBottom: "1px solid #1C1C20", padding: "10px 0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input style={{ ...inlineInput, color: "#EDEDF0", fontSize: 14 }} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} placeholder="Description" />
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 6px" }}>
+                      <input style={{ ...inlineInput, color: "#5E5E6E", fontFamily: mono, fontSize: 12, width: 30, padding: "1px 2px", textAlign: "center" }} type="text" inputMode="decimal" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
+                      <span style={{ color: "#3E3E4A", fontSize: 12 }}>x</span>
+                      <input style={{ ...inlineInput, color: "#5E5E6E", fontFamily: mono, fontSize: 12, width: 80, padding: "1px 2px" }} type="text" inputMode="decimal" value={item.rate} onChange={(e) => updateItem(idx, "rate", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 4, flexShrink: 0 }}>
+                    <span style={{ color: "#EDEDF0", fontSize: 14, fontWeight: 500, fontFamily: mono }}>{formatCurrency(item.amount)}</span>
+                    {items.length > 1 && <button onClick={() => { removeItem(idx); persist(); }} style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", fontSize: 14, padding: "4px" }}>×</button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 8 }}>
+            <thead><tr style={{ borderBottom: "2px solid #1C1C20" }}>
+              <th style={{ textAlign: "left", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A" }}>DESCRIPTION</th>
+              <th style={{ textAlign: "center", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 70 }}>QTY</th>
+              <th style={{ textAlign: "right", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 110 }}>RATE</th>
+              <th style={{ textAlign: "right", padding: "10px 0", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: "#3E3E4A", width: 110 }}>AMOUNT</th>
+              <th style={{ width: 32 }} />
+            </tr></thead>
+            <tbody>{items.map((item, idx) => (
+              <tr key={item.id} style={{ borderBottom: "1px solid #1C1C20" }}>
+                <td style={{ padding: "4px 0" }}>
+                  <input style={{ ...inlineInput, color: "#EDEDF0" }} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} placeholder="Description" />
+                  <input style={{ ...inlineInput, color: "#5E5E6E", fontSize: 11, padding: "0px 6px 4px" }} value={item.subtext || ""} onChange={(e) => updateItem(idx, "subtext", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} placeholder="Optional note..." />
+                </td>
+                <td style={{ padding: "4px 0", verticalAlign: "top" }}>
+                  <input style={{ ...inlineInput, textAlign: "center", color: "#7B7B88", fontFamily: mono }} type="text" inputMode="decimal" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
+                </td>
+                <td style={{ padding: "4px 0", verticalAlign: "top" }}>
+                  <input style={{ ...inlineInput, textAlign: "right", color: "#7B7B88", fontFamily: mono }} type="text" inputMode="decimal" value={item.rate} onChange={(e) => updateItem(idx, "rate", e.target.value)} onBlur={handleInlineBlur} onFocus={handleInlineFocus} />
+                </td>
+                <td style={{ padding: "12px 0", color: "#EDEDF0", fontSize: 14, textAlign: "right", fontWeight: 500, fontFamily: mono, verticalAlign: "top" }}>{formatCurrency(item.amount)}</td>
+                <td style={{ textAlign: "center", verticalAlign: "top" }}>
+                  {items.length > 1 && <button onClick={() => { removeItem(idx); persist(); }} style={{ background: "none", border: "none", color: "#3E3E4A", cursor: "pointer", fontSize: 14, padding: "4px" }}>×</button>}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>
+        )}
         <button onClick={() => addItem()} style={{ ...btnSecondary, fontSize: 11, padding: "4px 10px", marginBottom: 24 }}>+ Add Line Item</button>
 
         {/* Total */}
@@ -3343,15 +3370,17 @@ export default function HoldFastApp({ session }: { session?: any }) {
       {/* Sidebar */}
       <div style={{
         width: 200, background: "#141416", borderRight: "1px solid #1C1C20", display: "flex", flexDirection: "column", flexShrink: 0,
-        ...(isMobile ? { position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 999, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 200ms ease" } : {})
+        ...(isMobile ? { position: "fixed", top: 52, left: 0, bottom: 0, zIndex: 999, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 200ms ease" } : {})
       }}>
-        <div onClick={() => navigate({ page: "dashboard" })} style={{ padding: "16px 20px", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-          <svg width="15" height="15" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="210" height="210" rx="105" fill="white"/>
-            <path d="M59 113.144C59 111.777 59.5924 110.387 60.7773 108.974L120.387 34.736C121.891 32.8675 123.508 31.9561 125.24 32.0016C126.972 32.0472 128.316 32.7764 129.273 34.1891C130.276 35.5563 130.322 37.402 129.41 39.7262L109.928 92.4313H146.979C148.391 92.4313 149.531 92.8643 150.396 93.7301C151.308 94.596 151.764 95.667 151.764 96.943C151.764 98.3102 151.194 99.723 150.055 101.181L90.4453 175.351C88.9414 177.22 87.3008 178.131 85.5234 178.086C83.7917 178.086 82.4473 177.379 81.4902 175.966C80.5332 174.554 80.4876 172.685 81.3535 170.361L100.904 117.656H63.8535C62.4408 117.656 61.2786 117.223 60.3672 116.357C59.4557 115.491 59 114.42 59 113.144Z" fill="black"/>
-          </svg>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#EDEDF0", letterSpacing: "0.3px" }}>HOLD FAST OS</span>
-        </div>
+        {!isMobile && (
+          <div onClick={() => navigate({ page: "dashboard" })} style={{ padding: "16px 20px", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+            <svg width="15" height="15" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="210" height="210" rx="105" fill="white"/>
+              <path d="M59 113.144C59 111.777 59.5924 110.387 60.7773 108.974L120.387 34.736C121.891 32.8675 123.508 31.9561 125.24 32.0016C126.972 32.0472 128.316 32.7764 129.273 34.1891C130.276 35.5563 130.322 37.402 129.41 39.7262L109.928 92.4313H146.979C148.391 92.4313 149.531 92.8643 150.396 93.7301C151.308 94.596 151.764 95.667 151.764 96.943C151.764 98.3102 151.194 99.723 150.055 101.181L90.4453 175.351C88.9414 177.22 87.3008 178.131 85.5234 178.086C83.7917 178.086 82.4473 177.379 81.4902 175.966C80.5332 174.554 80.4876 172.685 81.3535 170.361L100.904 117.656H63.8535C62.4408 117.656 61.2786 117.223 60.3672 116.357C59.4557 115.491 59 114.42 59 113.144Z" fill="black"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#EDEDF0", letterSpacing: "0.3px" }}>HOLD FAST OS</span>
+          </div>
+        )}
         <nav style={{ padding: "12px 8px", flex: 1 }}>
           {navItems.map((item) => {
             const isActive = route.page === item.key;
@@ -3384,11 +3413,17 @@ export default function HoldFastApp({ session }: { session?: any }) {
       <div style={{ flex: 1, overflow: "auto", padding: isMobile ? "16px" : "32px 40px", ...(isMobile ? { paddingTop: 60 } : {}) }}>
         {/* Mobile Top Bar */}
         {isMobile && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 52, background: "#0A0A0C", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 997 }}>
-            <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#EDEDF0", cursor: "pointer", padding: 4, display: "flex" }}>
-              <Menu size={20} />
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 52, background: "#0A0A0C", borderBottom: "1px solid #1C1C20", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 1000 }}>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "none", border: "none", color: "#EDEDF0", cursor: "pointer", padding: 4, display: "flex", transition: "transform 200ms ease", transform: sidebarOpen ? "rotate(90deg)" : "rotate(0deg)" }}>
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#EDEDF0", letterSpacing: "0.3px" }}>HOLD FAST OS</span>
+            <div onClick={() => { navigate({ page: "dashboard" }); setSidebarOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <svg width="15" height="15" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="210" height="210" rx="105" fill="white"/>
+                <path d="M59 113.144C59 111.777 59.5924 110.387 60.7773 108.974L120.387 34.736C121.891 32.8675 123.508 31.9561 125.24 32.0016C126.972 32.0472 128.316 32.7764 129.273 34.1891C130.276 35.5563 130.322 37.402 129.41 39.7262L109.928 92.4313H146.979C148.391 92.4313 149.531 92.8643 150.396 93.7301C151.308 94.596 151.764 95.667 151.764 96.943C151.764 98.3102 151.194 99.723 150.055 101.181L90.4453 175.351C88.9414 177.22 87.3008 178.131 85.5234 178.086C83.7917 178.086 82.4473 177.379 81.4902 175.966C80.5332 174.554 80.4876 172.685 81.3535 170.361L100.904 117.656H63.8535C62.4408 117.656 61.2786 117.223 60.3672 116.357C59.4557 115.491 59 114.42 59 113.144Z" fill="black"/>
+              </svg>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#EDEDF0", letterSpacing: "0.3px" }}>HOLD FAST OS</span>
+            </div>
             <div style={{ width: 28 }} />
           </div>
         )}
