@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg: #0A0A0C;
+  --bg2: #141416;
+  --bg3: #1A1A1E;
+  --bg3h: #1F1F24;
+  --bgcard: #1A1A1E;
+  --bgi: #141416;
+  --bgm: #121614;
+  --bgmb: #1A2820;
+
+  /* Borders */
+  --b1: #1C1C20;
+  --b2: #2A2A30;
+  --bf: #4A4A54;
+
+  /* Text */
+  --t1: #EDEDF0;
+  --t2: #7B7B88;
+  --t3: #5E5E6E;
+  --t4: #3E3E4A;
+
+  /* Accent */
+  --as: #346E96;
+  --as2: #3D7BA6;
+  --ab: #EDEDF0;
+  --abt: #0A0A0C;
+
+  /* Green */
+  --g: #4ADE80;
+  --gs: #4ADE801A;
+  --gg: #4ADE8038;
+  --gt: #4ADE80;
+
+  /* Amber */
+  --am: #FBBF24;
+  --ams: #FBBF241A;
+
+  /* Blue */
+  --bl: #346E96;
+  --bls: #346E961F;
+  --blt: #4A8DB8;
+
+  /* Red */
+  --red-500: #EF4444;
+  --red-400: #F87171;
+  --red-300: #FCA5A5;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--font-inter), 'Inter', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
