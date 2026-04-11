@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export function PrintButton() {
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("print")) {
-      setTimeout(() => window.print(), 600);
-    }
-  }, []);
+  const pathname = usePathname();
+  const token = pathname.split("/").pop();
 
   return (
-    <button
+    <a
+      href={`/api/invoice/${token}/pdf`}
+      download
       className="no-print"
-      onClick={() => window.print()}
       style={{
         position: "fixed",
         top: 16,
@@ -31,6 +29,7 @@ export function PrintButton() {
         fontFamily: "'Inter', sans-serif",
         boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
         zIndex: 1000,
+        textDecoration: "none",
       }}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -39,6 +38,6 @@ export function PrintButton() {
         <line x1="12" y1="15" x2="12" y2="3" />
       </svg>
       Download PDF
-    </button>
+    </a>
   );
 }

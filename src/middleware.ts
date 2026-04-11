@@ -7,7 +7,7 @@ export default auth((req) => {
 
   // Public routes
   const isDemo = req.nextUrl.searchParams.has("demo");
-  const publicPaths = ["/login", "/invoice/", "/api/auth/"];
+  const publicPaths = ["/login", "/invoice/", "/api/auth/", "/api/invoice/"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (isPublicPath || isDemo) {

@@ -2,16 +2,9 @@
 import { getInvoiceByToken, recordInvoiceView, getSettingsPublic } from "@/lib/actions";
 import { notFound } from "next/navigation";
 import { PrintButton } from "./print-button";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
-}
-function formatDate(dateStr) {
-  if (!dateStr) return "—";
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
 
 const mono = "var(--font-jetbrains-mono), 'JetBrains Mono', monospace";
 
@@ -36,13 +29,6 @@ export default async function PublicInvoicePage({ params, searchParams }: { para
   return (
     <>
       <style>{`
-        @media print {
-          @page { margin: 0.5in; size: letter; }
-          html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print { display: none !important; }
-          .inv-wrapper { padding: 0 !important; min-height: auto !important; background: white !important; }
-          .inv-card { box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
-        }
         @media (max-width: 768px) {
           .inv-wrapper { padding: 16px 8px !important; }
           .inv-card { padding: 24px 20px !important; }

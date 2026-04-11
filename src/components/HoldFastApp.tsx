@@ -1610,15 +1610,31 @@ function ProjectsListPage({ projects, clients, invoices, navigate, onSave, onDel
   );
 }
 
-function ProjectEditPage({ projectId, defaultClientId, clients, projects, onSave, onDelete, navigate, isMobile }) {
+function ProjectEditPage({ projectId, defaultClientId, clients, projects, onSave, onDelete, onCreateClient, navigate, isMobile }) {
   const project = projects.find((p) => p.id === projectId);
-  const [form, setForm] = useState(project || { clientId: defaultClientId || clients[0]?.id || "", name: "", description: "", status: "active", startDate: todayStr(), rate: "", rateType: "monthly" });
+  const activeClients = clients.filter((c) => c.status === "active" || (project && c.id === project.clientId)).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  const defaultClient = activeClients.find((c) => c.id === defaultClientId) || activeClients[0];
+  const [form, setForm] = useState(project || { clientId: defaultClient?.id || "", name: "", description: "", status: "active", startDate: todayStr(), rate: "", rateType: "monthly" });
   const upd = (k, v) => setForm({ ...form, [k]: v });
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
   return (
     <div>
       <PageHeader title={project ? `Edit: ${project.name}` : "New Project"} backLabel="Projects" onBack={() => navigate({ page: "projects" })} isMobile={isMobile} />
       <div style={{ maxWidth: 600 }}>
-        <Field label="Client"><Select value={form.clientId} onChange={(v) => upd("clientId", v)} options={clients.map((c) => ({ value: c.id, label: c.name }))} /></Field>
+        <Field label="Client"><Select value={form.clientId} onChange={(v) => { if (v === "__new__") { setShowNewClient(true); return; } upd("clientId", v); }} options={[{ value: "__new__", label: "+ New Client" }, ...activeClients.map((c) => ({ value: c.id, label: c.name }))]} /></Field>
+        {showNewClient && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowNewClient(false)}>
+            <div style={{ background: "#141416", border: "1px solid #1C1C20", borderRadius: 12, padding: 24, width: 360 }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#EDEDF0", marginBottom: 16 }}>New Client</div>
+              <Field label="Client Name"><input style={inputStyle} autoFocus value={newClientName} onChange={(e) => setNewClientName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newClientName.trim()) { e.preventDefault(); void (async () => { const nc = await onCreateClient({ name: newClientName.trim() }, { skipNavigate: true }); if (nc) upd("clientId", nc.id); setNewClientName(""); setShowNewClient(false); })(); }}} /></Field>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button style={btnPrimary} onClick={() => { if (!newClientName.trim()) return; void (async () => { const nc = await onCreateClient({ name: newClientName.trim() }, { skipNavigate: true }); if (nc) upd("clientId", nc.id); setNewClientName(""); setShowNewClient(false); })(); }}>Create</button>
+                <button style={btnSecondary} onClick={() => { setNewClientName(""); setShowNewClient(false); }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
         <Field label="Project Name"><input style={inputStyle} value={form.name} onChange={(e) => upd("name", e.target.value)} /></Field>
         <Field label="Description"><textarea style={{ ...inputStyle, height: 60, resize: "vertical" }} value={form.description} onChange={(e) => upd("description", e.target.value)} /></Field>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
@@ -2146,7 +2162,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
               <Send size={12} /> Send
             </button>
             <a className="act" href={`/invoice/${invoice.viewToken}?preview`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><Eye size={12} /> Preview</a>
-            <a className="act" href={`/invoice/${invoice.viewToken}?preview&print`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
+            <a className="act" href={`/api/invoice/${invoice.viewToken}/pdf`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
             <ActionMenu items={[
               { icon: <Check size={13} />, label: "Mark Paid", onClick: () => setShowPaidModal(true) },
@@ -2164,7 +2180,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
                 persist();
                 onMarkPaid(invoice.id, null);
               }}><X size={12} /> Mark Unpaid</button>
-            <a className="act" href={`/invoice/${invoice.viewToken}?print`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
+            <a className="act" href={`/api/invoice/${invoice.viewToken}/pdf`} target="_blank" rel="noopener noreferrer" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", textDecoration: "none" }}><FileText size={12} /> PDF</a>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => void (async () => { if (await _confirmFn({ title: "Delete this invoice?", confirmLabel: "Delete", danger: true })) { onDelete(invoiceId); navigate({ page: "invoices" }); } })()}><Trash2 size={12} /> Delete</button>
           </>) : (<>
             <button className="act" style={{ background: "none", border: "none", borderRadius: 4, color: "#7B7B88", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, padding: "5px 10px" }} onClick={() => setShowReminderModal(true)}>
@@ -2175,7 +2191,7 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
             <ActionMenu items={[
               { icon: <Send size={13} />, label: "Resend", onClick: () => setShowSendModal(true) },
               { icon: <Eye size={13} />, label: "Preview", onClick: () => window.open(`/invoice/${invoice.viewToken}?preview`, "_blank") },
-              { icon: <FileText size={13} />, label: "Download PDF", onClick: () => window.open(`/invoice/${invoice.viewToken}?print`, "_blank") },
+              { icon: <FileText size={13} />, label: "Download PDF", onClick: () => window.open(`/api/invoice/${invoice.viewToken}/pdf`, "_blank") },
               { icon: <CopyPlus size={13} />, label: "Duplicate", onClick: () => onDuplicate(invoice) },
               { icon: <Copy size={13} />, label: "Copy Link", onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/invoice/${invoice.viewToken}`); _toastFn("Link copied", "info"); } },
             ]} />
@@ -2472,9 +2488,13 @@ function InvoiceDetailPage({ invoiceId, invoices, clients, projects, lineItems, 
   );
 }
 
-function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: existingItems, onSave, onCancel, settings, isMobile }: { invoice: any; invoices: any[]; clients: any[]; projects: any[]; lineItems: any; onSave: any; onCancel: any; settings: Settings; isMobile?: boolean }) {
-  const [form, setForm] = useState(invoice ? { ...invoice } : { clientId: clients[0]?.id || "", projectId: "", status: "draft", issueDate: todayStr(), dueDate: addDays(todayStr(), settings.paymentTermsDays), notes: "", clientNotes: "", number: nextInvoiceNumber(invoices, settings.invoicePrefix), recipients: getClientEmails(clients[0]) });
+function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: existingItems, onSave, onCancel, onCreateClient, settings, isMobile }: { invoice: any; invoices: any[]; clients: any[]; projects: any[]; lineItems: any; onSave: any; onCancel: any; onCreateClient?: any; settings: Settings; isMobile?: boolean }) {
+  const activeClients = clients.filter((c) => c.status === "active" || (invoice && c.id === invoice.clientId)).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  const defaultClient = activeClients[0];
+  const [form, setForm] = useState(invoice ? { ...invoice } : { clientId: defaultClient?.id || "", projectId: "", status: "draft", issueDate: todayStr(), dueDate: addDays(todayStr(), settings.paymentTermsDays), notes: "", clientNotes: "", number: nextInvoiceNumber(invoices, settings.invoicePrefix), recipients: getClientEmails(defaultClient) });
   const [items, setItems] = useState(existingItems.length > 0 ? existingItems : [{ id: generateId(), description: "", quantity: 1, rate: 0, amount: 0 }]);
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
   const upd = (k, v) => setForm({ ...form, [k]: v });
   const clientProjects = projects.filter((p) => p.clientId === form.clientId);
 
@@ -2493,7 +2513,19 @@ function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: exis
   return (
     <div style={{ maxWidth: 720 }}>
       <Field label="Invoice Number"><input style={{ ...inputStyle, background: "#0A0A0C", color: "#5E5E6E" }} value={form.number} readOnly /></Field>
-      <Field label="Client"><Select value={form.clientId} onChange={(v) => { const sel = clients.find((c) => c.id === v); setForm({ ...form, clientId: v, projectId: "", recipients: getClientEmails(sel) }); }} options={clients.map((c) => ({ value: c.id, label: c.name }))} /></Field>
+      <Field label="Client"><Select value={form.clientId} onChange={(v) => { if (v === "__new__") { setShowNewClient(true); return; } const sel = clients.find((c) => c.id === v); setForm({ ...form, clientId: v, projectId: "", recipients: getClientEmails(sel) }); }} options={[{ value: "__new__", label: "+ New Client" }, ...activeClients.map((c) => ({ value: c.id, label: c.name }))]} /></Field>
+      {showNewClient && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowNewClient(false)}>
+          <div style={{ background: "#141416", border: "1px solid #1C1C20", borderRadius: 12, padding: 24, width: 360 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#EDEDF0", marginBottom: 16 }}>New Client</div>
+            <Field label="Client Name"><input style={inputStyle} autoFocus value={newClientName} onChange={(e) => setNewClientName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && newClientName.trim()) { e.preventDefault(); void (async () => { const nc = await onCreateClient({ name: newClientName.trim() }, { skipNavigate: true }); if (nc) { setForm((prev) => ({ ...prev, clientId: nc.id, projectId: "", recipients: getClientEmails(nc) })); } setNewClientName(""); setShowNewClient(false); })(); }}} /></Field>
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button style={btnPrimary} onClick={() => { if (!newClientName.trim()) return; void (async () => { const nc = await onCreateClient({ name: newClientName.trim() }, { skipNavigate: true }); if (nc) { setForm((prev) => ({ ...prev, clientId: nc.id, projectId: "", recipients: getClientEmails(nc) })); } setNewClientName(""); setShowNewClient(false); })(); }}>Create</button>
+              <button style={btnSecondary} onClick={() => { setNewClientName(""); setShowNewClient(false); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       {clientProjects.length > 0 && (
         <Field label="Project"><Select value={form.projectId} onChange={(v) => upd("projectId", v)} options={[{ value: "", label: "None" }, ...clientProjects.map((p) => ({ value: p.id, label: p.name }))]} /></Field>
       )}
@@ -2540,11 +2572,11 @@ function InvoiceEditView({ invoice, invoices, clients, projects, lineItems: exis
   );
 }
 
-function InvoiceNewPage({ invoices, clients, projects, onSave, navigate, settings, isMobile }: { invoices: any[]; clients: any[]; projects: any[]; onSave: any; navigate: any; settings: Settings; isMobile?: boolean }) {
+function InvoiceNewPage({ invoices, clients, projects, onSave, onCreateClient, navigate, settings, isMobile }: { invoices: any[]; clients: any[]; projects: any[]; onSave: any; onCreateClient?: any; navigate: any; settings: Settings; isMobile?: boolean }) {
   return (
     <div>
       <PageHeader title="New Invoice" backLabel="Invoices" onBack={() => navigate({ page: "invoices" })} isMobile={isMobile} />
-      <InvoiceEditView invoice={null} invoices={invoices} clients={clients} projects={projects} lineItems={[]} onSave={async (inv, items) => { const newId = await onSave(inv, items); navigate({ page: "invoices", sub: "detail", id: newId }); }} onCancel={() => navigate({ page: "invoices" })} settings={settings} isMobile={isMobile} />
+      <InvoiceEditView invoice={null} invoices={invoices} clients={clients} projects={projects} lineItems={[]} onSave={async (inv, items) => { const newId = await onSave(inv, items); navigate({ page: "invoices", sub: "detail", id: newId }); }} onCancel={() => navigate({ page: "invoices" })} onCreateClient={onCreateClient} settings={settings} isMobile={isMobile} />
     </div>
   );
 }
@@ -3842,13 +3874,13 @@ export default function HoldFastApp({ session: realSession }: { session?: any })
     }
 
     if (page === "projects") {
-      if (sub === "new") return <ProjectEditPage projectId="new" defaultClientId={route.clientId} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} isMobile={isMobile} />;
-      if (sub === "edit" && id) return <ProjectEditPage projectId={id} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} navigate={navigate} isMobile={isMobile} />;
+      if (sub === "new") return <ProjectEditPage projectId="new" defaultClientId={route.clientId} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} onCreateClient={saveClient} navigate={navigate} isMobile={isMobile} />;
+      if (sub === "edit" && id) return <ProjectEditPage projectId={id} clients={clients} projects={projects} onSave={saveProject} onDelete={deleteProject} onCreateClient={saveClient} navigate={navigate} isMobile={isMobile} />;
       return <ProjectsListPage projects={projects} clients={clients} invoices={invoices} navigate={navigate} onSave={saveProject} onDelete={deleteProject} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
     }
 
     if (page === "invoices") {
-      if (sub === "new") return <InvoiceNewPage invoices={invoices} clients={clients} projects={projects} onSave={saveInvoice} navigate={navigate} settings={settings} isMobile={isMobile} />;
+      if (sub === "new") return <InvoiceNewPage invoices={invoices} clients={clients} projects={projects} onSave={saveInvoice} onCreateClient={saveClient} navigate={navigate} settings={settings} isMobile={isMobile} />;
       const duplicateInvoice = async (inv) => { const newId = await saveInvoice({ ...inv, id: undefined, viewToken: undefined, number: nextInvoiceNumber(invoices, settings.invoicePrefix), status: "draft", sentDate: null, paidDate: null, viewedDate: null, recipients: inv.recipients || [] }, lineItems.filter((li) => li.invoiceId === inv.id).map((li) => ({ ...li, id: undefined }))); if (newId) navigate({ page: "invoices", sub: "detail", id: newId }); _toastFn("Invoice duplicated"); };
       if (sub === "detail" && id) return <InvoiceDetailPage invoiceId={id} invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onSave={saveInvoice} onDelete={deleteInvoice} onMarkPaid={markPaid} onMarkSent={markSent} onAddClient={saveClient} onDuplicate={duplicateInvoice} navigate={navigate} settings={settings} isMobile={isMobile} />;
       return <InvoicesListPage invoices={invoices} clients={clients} projects={projects} lineItems={lineItems} onDelete={deleteInvoice} onMarkPaid={markPaid} onDuplicate={duplicateInvoice} navigate={navigate} timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} isMobile={isMobile} />;
